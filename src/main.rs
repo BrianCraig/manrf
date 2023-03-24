@@ -8,6 +8,28 @@ pub trait Leaf {
     fn to_string(&self) -> String;
 }
 
+pub struct Stack {
+    items: Vec<Rc<dyn Leaf>>
+}
+
+impl Stack {
+    pub fn col(items: Vec<Rc<dyn Leaf>>) -> Rc<Self> {
+        Rc::new(Stack{items})
+    }
+}
+
+impl Leaf for Stack {
+    fn to_string(&self) -> String {
+        let coll = self
+            .items
+            .iter()
+            .map(|e| e.to_string())
+            .collect::<Vec<String>>()
+            .join(", ");
+        format!("[{}]", coll)
+    }
+}
+
 pub struct Text {
     val: &'static str,
 }
@@ -40,34 +62,39 @@ impl Leaf for Number {
     }
 }
 
-
-
 type Component<T> = fn(T) -> Rc<dyn Leaf>;
 
 trait Runner {
     fn to_string(&self) -> String;
 }
 
-pub struct App<T> where T: Copy {
+pub struct App<T>
+where
+    T: Copy,
+{
     root: Component<T>,
-    defaults: T
+    defaults: T,
 }
 
-impl<T> App<T> where T: Copy {
+impl<T> App<T>
+where
+    T: Copy,
+{
     pub fn new(root: Component<T>, defaults: T) -> Self {
         Self { root, defaults }
     }
 }
 
-impl<T> Runner for App<T> where T: Copy  {
+impl<T> Runner for App<T>
+where
+    T: Copy,
+{
     fn to_string(&self) -> String {
         let t = (self.defaults,);
         let r = self.root.call(t);
         r.to_string()
     }
 }
-
-
 
 #[cfg(test)]
 pub mod app_tests;
