@@ -1,8 +1,9 @@
 use embedded_graphics::prelude::Size;
 
+#[derive(Copy, Clone)]
 pub struct Constraints {
-    min: Size,
-    max: Size,
+    pub min: Size,
+    pub max: Size,
 }
 
 impl Constraints {

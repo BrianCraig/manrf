@@ -5,6 +5,7 @@ use crate::Runner;
 use super::{App, Component, Number, Stack, Text, Box};
 
 use embedded_graphics::pixelcolor::raw::RawU16;
+use embedded_graphics::prelude::Point;
 use embedded_graphics::{geometry::Size, pixelcolor::Rgb565};
 use embedded_graphics::mock_display::MockDisplay;
 
@@ -55,26 +56,11 @@ fn create_canvas() {
 
     let mut window = Window::new("Hello World", &output_settings);
 
-    app.render(Size::new(200, 400));
+    let a = app.render(Size::new(200, 400));
+
+    app.paint(a, Point::default());
 
     window.show_static(&display);
-    
-    // how it should be called
-    
-    // app.child().determine_size(constraints) -> Size
-    
-    // col.for child
-    //   child.determine_size(constraints - sum_size) -> Size
-    
-    //   return exactly
-    
-    // return Size child.size.height.sum, child.size.width.max
-    
-    // app center col
-    
-    // each element should understand paint(pos, &display), determine_size(constraints) -> Size, and know its size.
-    
-    // it also has to know each child position.
     
 }
 
