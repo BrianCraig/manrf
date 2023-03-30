@@ -3,10 +3,13 @@
 use constraints::Constraints;
 use embedded_graphics::draw_target::DrawTarget;
 use embedded_graphics::geometry::Size;
+use embedded_graphics::mono_font::{ascii::FONT_6X10, MonoTextStyle};
 use embedded_graphics::pixelcolor::Rgb565;
 use embedded_graphics::prelude::{Point, RgbColor};
 use embedded_graphics::primitives::Rectangle;
+use embedded_graphics::Drawable;
 use embedded_graphics_simulator::SimulatorDisplay;
+
 use std::rc::Rc;
 
 mod constraints;
@@ -18,7 +21,8 @@ fn main() {}
 
 pub trait Leaf {
     fn to_string(&self) -> String;
-    fn render(&self, constraints: constraints::Constraints, element: Option<Element>) -> RenderNode;
+    fn render(&self, constraints: constraints::Constraints, element: Option<Element>)
+        -> RenderNode;
     fn paint(&self, pos: Point, display: &mut Draw565);
 }
 
@@ -109,11 +113,12 @@ impl Leaf for Stack {
 
 pub struct Box {
     size: Size,
+    color: Rgb565,
 }
 
 impl Box {
-    pub fn exactly(size: Size, _: Option<i32>) -> Rc<Self> {
-        Rc::new(Self { size })
+    pub fn exactly(size: Size, color: Rgb565, _: Option<i32>) -> Rc<Self> {
+        Rc::new(Self { size, color })
     }
 }
 
@@ -122,7 +127,7 @@ impl Leaf for Box {
         todo!()
     }
 
-    fn render(&self, constraints: constraints::Constraints, element: Option<Element>) -> RenderNode {
+    fn render(&self, _: Constraints, element: Option<Element>) -> RenderNode {
         RenderNode::SingleChild(RenderData {
             offset: Point::default(),
             size: self.size,
@@ -132,7 +137,13 @@ impl Leaf for Box {
     }
 
     fn paint(&self, pos: Point, display: &mut Draw565) {
-        let _ = display.fill_solid(&Rectangle { top_left:pos, size: self.size }, Rgb565::BLUE);
+        let _ = display.fill_solid(
+            &Rectangle {
+                top_left: pos,
+                size: self.size,
+            },
+            self.color,
+        );
     }
 }
 
@@ -151,12 +162,29 @@ impl Leaf for Text {
         self.val.to_string()
     }
 
-    fn render(&self, constraints: constraints::Constraints, element: Option<Element>) -> RenderNode {
-        todo!();
+    fn render(
+        &self,
+        constraints: constraints::Constraints,
+        element: Option<Element>,
+    ) -> RenderNode {
+        RenderNode::SingleChild(RenderData {
+            offset: Point::default(),
+            size: Size::new(50, 10),
+            renderer: element.unwrap(),
+            child: std::boxed::Box::new(RenderNode::Leaf),
+        })
     }
 
     fn paint(&self, pos: Point, display: &mut Draw565) {
-        todo!()
+        let mut small_style = MonoTextStyle::new(&FONT_6X10, Rgb565::WHITE);
+        small_style.underline_color = embedded_graphics::text::DecorationColor::Custom(Rgb565::RED);
+        small_style.background_color = Some(Rgb565::GREEN);
+        let _ = embedded_graphics::text::Text::new(
+            self.val,
+            pos + Point::new(0, small_style.font.baseline as i32),
+            small_style,
+        )
+        .draw(display);
     }
 }
 
@@ -175,7 +203,11 @@ impl Leaf for Number {
         self.val.to_string()
     }
 
-    fn render(&self, constraints: constraints::Constraints, element: Option<Element>) -> RenderNode {
+    fn render(
+        &self,
+        constraints: constraints::Constraints,
+        element: Option<Element>,
+    ) -> RenderNode {
         todo!();
     }
 
@@ -237,7 +269,7 @@ where
             RenderNode::SingleChild(RenderData {
                 offset,
                 size,
-                renderer, 
+                renderer,
                 child,
             }) => {
                 let new_offset = origin_offset + offset;
@@ -254,7 +286,7 @@ where
                     self.paint(item, new_offset);
                 }
             }
-            RenderNode::Leaf => {},
+            RenderNode::Leaf => {}
         }
     }
 }

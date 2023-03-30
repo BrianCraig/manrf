@@ -2,7 +2,7 @@ use crate::Runner;
 
 use super::{App, Box, Component, Number, Stack, Text};
 
-use embedded_graphics::geometry::Size;
+use embedded_graphics::{geometry::Size, pixelcolor::Rgb565, prelude::RgbColor};
 
 use embedded_graphics_simulator::SimulatorDisplay;
 
@@ -44,9 +44,9 @@ fn create_canvas() {
             height: 16,
         };
         Stack::col(vec![
-            Box::exactly(size_16, None),
-            Box::exactly(size_16, None),
-            Box::exactly(size_16, None),
+            Box::exactly(size_16, Rgb565::RED, None),
+            Box::exactly(size_16, Rgb565::GREEN, None),
+            Box::exactly(size_16, Rgb565::BLUE, None),
         ])
     };
 
