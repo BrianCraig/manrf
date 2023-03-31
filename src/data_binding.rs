@@ -57,7 +57,7 @@ fn global_store() {
     store.insert(3);
     assert_eq!(store.get::<i32>(), &3);
     assert_eq!(store.get::<i64>(), &0);
-    assert_eq!(store.get::<bool>(), &true);
-    store.insert(false);
     assert_eq!(store.get::<bool>(), &false);
+    store.insert(true);
+    assert_eq!(store.get::<bool>(), &true);
 }

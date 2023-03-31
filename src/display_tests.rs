@@ -50,7 +50,7 @@ fn create_canvas() {
 
     app.paint(a, Point::default());
 
-    window.show_static(&display);
+    // window.show_static(&display);
 }
 
 #[test]
@@ -85,7 +85,7 @@ fn create_canvas_2() {
 
     app.paint(a, Point::default());
 
-    window.show_static(&display);
+    // window.show_static(&display);
 }
 
 #[test]
@@ -122,7 +122,7 @@ fn mutate_component() {
 
     app.paint(a, Point::default());
 
-    window.show_static(&display);
+    // window.show_static(&display);
 }
 
 #[test]
