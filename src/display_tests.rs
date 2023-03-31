@@ -1,6 +1,7 @@
+use std::any::TypeId;
 use std::num::NonZeroU16;
 
-use crate::Runner;
+use crate::{Padding, Runner};
 
 use super::{App, Box, Component, Number, Stack, Text};
 
@@ -88,8 +89,47 @@ fn create_canvas_2() {
 }
 
 #[test]
+fn mutate_component() {
+    let size = Size::new(80, 80);
+
+    let comp: Component<_> = |active: bool| {
+        let size_8 = Size {
+            width: 8,
+            height: 8,
+        };
+
+        Stack::col(vec![
+            Box::exactly(size_8, Rgb565::RED, None),
+            Padding::new(Size::new(3, 2), Text::new("Hi")),
+            Box::exactly(size_8, Rgb565::BLUE, None),
+            Text::new("This is some Text"),
+        ])
+    };
+
+    let mut display = SimulatorDisplay::new(size);
+
+    let mut app = App::new(comp, false, &mut display);
+
+    let output_settings = OutputSettingsBuilder::new()
+        .max_fps(60)
+        .pixel_spacing(1)
+        .scale(4)
+        .build();
+
+    let mut window = Window::new("Hello World", &output_settings);
+
+    let a = app.render(size);
+
+    app.paint(a, Point::default());
+
+    window.show_static(&display);
+}
+
+#[test]
 fn create_colors() {
     let a: Rgb565 = Rgb565::from(RawU16::from(0xFEA0_u16));
     let a: Rgb565 = a.into();
     println!("{:?}", a);
+    let a = TypeId::of::<Box>();
+    println!("{:?}", a == TypeId::of::<Text>());
 }

@@ -13,6 +13,7 @@ use embedded_graphics_simulator::SimulatorDisplay;
 use std::rc::Rc;
 
 mod constraints;
+mod data_binding;
 mod render_tree;
 
 use render_tree::{RenderData, RenderNode};
@@ -21,8 +22,7 @@ fn main() {}
 
 pub trait Leaf {
     fn to_string(&self) -> String;
-    fn render(&self, constraints: constraints::Constraints, element: Option<Element>)
-        -> RenderNode;
+    fn render(&self, constraints: constraints::Constraints) -> (Size, RenderNode);
     fn paint(&self, pos: Point, display: &mut Draw565);
 }
 
@@ -49,7 +49,7 @@ impl Leaf for Stack {
         format!("[{}]", coll)
     }
 
-    fn render(&self, constraints: constraints::Constraints, _: Option<Element>) -> RenderNode {
+    fn render(&self, constraints: constraints::Constraints) -> (Size, RenderNode) {
         // we keep the constraints from the parent;
 
         let mut sum = 0_u32;
@@ -58,38 +58,20 @@ impl Leaf for Stack {
         let render_child: Vec<_> = self
             .items
             .iter()
-            .map(|item| item.render(constraints, Some(item.clone())))
-            .map(|item| match item {
-                RenderNode::SingleChild(data) => {
-                    let new_offset = Point {
-                        x: 0,
-                        y: sum as i32,
-                    };
-                    sum += data.size.height;
-                    max_cross = max_cross.max(data.size.width);
-                    RenderNode::SingleChild(RenderData {
-                        offset: new_offset,
-                        ..data
-                    })
-                }
-                RenderNode::MultiChild {
-                    offset: _,
-                    size,
-                    child,
-                } => {
-                    let new_offset = Point {
-                        x: 0,
-                        y: sum as i32,
-                    };
-                    sum += size.height;
-                    max_cross = max_cross.max(size.width);
-                    RenderNode::MultiChild {
-                        offset: new_offset,
-                        size,
-                        child,
-                    }
-                }
-                RenderNode::Leaf => RenderNode::Leaf,
+            .map(|item| (item, item.render(constraints)))
+            .map(|(comp, (size, render_node))| {
+                let new_offset = Point {
+                    x: 0,
+                    y: sum as i32,
+                };
+                sum += size.height;
+                max_cross = max_cross.max(size.width);
+                RenderNode::SingleChild(RenderData {
+                    offset: new_offset,
+                    child: std::boxed::Box::new(render_node),
+                    renderer: comp.clone(),
+                    size: size,
+                })
             })
             .collect();
 
@@ -99,11 +81,14 @@ impl Leaf for Stack {
         };
         let offset = (constraints.max - size) / 2;
         let offset = Point::new(offset.width as i32, offset.height as i32);
-        RenderNode::MultiChild {
-            offset,
+        (
             size,
-            child: render_child,
-        }
+            RenderNode::MultiChild {
+                offset,
+                size,
+                child: render_child,
+            },
+        )
     }
 
     fn paint(&self, pos: Point, display: &mut Draw565) {
@@ -127,13 +112,8 @@ impl Leaf for Box {
         todo!()
     }
 
-    fn render(&self, _: Constraints, element: Option<Element>) -> RenderNode {
-        RenderNode::SingleChild(RenderData {
-            offset: Point::default(),
-            size: self.size,
-            renderer: element.unwrap(),
-            child: std::boxed::Box::new(RenderNode::Leaf),
-        })
+    fn render(&self, constraints: constraints::Constraints) -> (Size, RenderNode) {
+        (self.size, RenderNode::Leaf)
     }
 
     fn paint(&self, pos: Point, display: &mut Draw565) {
@@ -145,6 +125,46 @@ impl Leaf for Box {
             self.color,
         );
     }
+}
+
+pub struct Padding {
+    padding: Size,
+    child: Element,
+}
+
+impl Padding {
+    pub fn new(padding: Size, child: Element) -> Rc<Self> {
+        Rc::new(Self { padding, child })
+    }
+}
+
+impl Leaf for Padding {
+    fn to_string(&self) -> String {
+        todo!()
+    }
+
+    fn render(&self, constraints: Constraints) -> (Size, RenderNode) {
+        let double_padding = self.padding * 2;
+        let child_constraints = constraints::Constraints {
+            min: constraints.min + double_padding,
+            max: constraints.max - double_padding,
+        };
+        let child = self.child.render(child_constraints);
+
+        let offset = Point::new(self.padding.width as i32, self.padding.height as i32);
+        let this_size = child.0 + double_padding;
+        (
+            this_size,
+            RenderNode::SingleChild(RenderData {
+                offset,
+                size: child.0,
+                renderer: self.child.clone(),
+                child: std::boxed::Box::new(child.1),
+            }),
+        )
+    }
+
+    fn paint(&self, pos: Point, display: &mut Draw565) {}
 }
 
 pub struct Text {
@@ -162,17 +182,8 @@ impl Leaf for Text {
         self.val.to_string()
     }
 
-    fn render(
-        &self,
-        constraints: constraints::Constraints,
-        element: Option<Element>,
-    ) -> RenderNode {
-        RenderNode::SingleChild(RenderData {
-            offset: Point::default(),
-            size: Size::new(50, 10),
-            renderer: element.unwrap(),
-            child: std::boxed::Box::new(RenderNode::Leaf),
-        })
+    fn render(&self, constraints: constraints::Constraints) -> (Size, RenderNode) {
+        (Size::new(50, 10), RenderNode::Leaf)
     }
 
     fn paint(&self, pos: Point, display: &mut Draw565) {
@@ -206,9 +217,8 @@ impl Leaf for Number {
     fn render(
         &self,
         constraints: constraints::Constraints,
-        element: Option<Element>,
-    ) -> RenderNode {
-        todo!();
+    ) -> (Size, RenderNode) {
+        (Size::new(50, 10), RenderNode::Leaf)
     }
 
     fn paint(&self, pos: Point, display: &mut Draw565) {
@@ -261,7 +271,7 @@ where
     fn render(&self, size: Size) -> RenderNode {
         let t = (self.defaults,);
         let r = self.root.call(t);
-        r.render(constraints::Constraints::up_to(size), Some(r.clone()))
+        r.render(constraints::Constraints::up_to(size)).1
     }
 
     fn paint(&mut self, node: RenderNode, origin_offset: Point) {
