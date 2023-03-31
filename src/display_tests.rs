@@ -10,7 +10,7 @@ use embedded_graphics::prelude::{Point, RgbColor};
 use embedded_graphics::{geometry::Size, pixelcolor::Rgb565};
 
 use embedded_graphics_simulator::{
-    BinaryColorTheme, OutputSettingsBuilder, SimulatorDisplay, SimulatorEvent, Window,
+    OutputSettingsBuilder, SimulatorDisplay, Window,
 };
 
 static palette: [u16; 16] = [
@@ -43,7 +43,7 @@ fn create_canvas() {
         .scale(8)
         .build();
 
-    let mut window = Window::new("Hello World", &output_settings);
+    let _window = Window::new("Hello World", &output_settings);
 
     let a = app.render(Size::new(30, 30));
 
@@ -78,7 +78,7 @@ fn create_canvas_2() {
         .scale(4)
         .build();
 
-    let mut window = Window::new("Hello World", &output_settings);
+    let _window = Window::new("Hello World", &output_settings);
 
     let a = app.render(size);
 
@@ -91,7 +91,7 @@ fn create_canvas_2() {
 fn mutate_component() {
     let size = Size::new(80, 80);
 
-    let comp: Component<_> = |active: bool| {
+    let comp: Component<_> = |_active: bool| {
         let size_8 = Size {
             width: 8,
             height: 8,
@@ -115,7 +115,7 @@ fn mutate_component() {
         .scale(4)
         .build();
 
-    let mut window = Window::new("Hello World", &output_settings);
+    let _window = Window::new("Hello World", &output_settings);
 
     let a = app.render(size);
 
@@ -127,7 +127,7 @@ fn mutate_component() {
 #[test]
 fn create_colors() {
     let a: Rgb565 = Rgb565::from(RawU16::from(0xFEA0_u16));
-    let a: Rgb565 = a.into();
+    let a: Rgb565 = a;
     println!("{:?}", a);
     let a = TypeId::of::<Box>();
     println!("{:?}", a == TypeId::of::<Text>());

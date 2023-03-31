@@ -40,7 +40,7 @@ impl GlobalStore {
                 .downcast_ref::<T>()
                 .unwrap(),
             false => {
-                self.store.insert(type_id, Box::new(T::default()));
+                self.store.insert(type_id, Box::<T>::default());
                 self.store
                     .get(&type_id)
                     .unwrap()

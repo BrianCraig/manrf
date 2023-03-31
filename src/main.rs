@@ -70,7 +70,7 @@ impl Leaf for Stack {
                     offset: new_offset,
                     child: std::boxed::Box::new(render_node),
                     renderer: comp.clone(),
-                    size: size,
+                    size,
                 })
             })
             .collect();
@@ -91,7 +91,7 @@ impl Leaf for Stack {
         )
     }
 
-    fn paint(&self, pos: Point, display: &mut Draw565) {
+    fn paint(&self, _pos: Point, _display: &mut Draw565) {
         todo!()
     }
 }
@@ -112,7 +112,7 @@ impl Leaf for Box {
         todo!()
     }
 
-    fn render(&self, constraints: constraints::Constraints) -> (Size, RenderNode) {
+    fn render(&self, _constraints: constraints::Constraints) -> (Size, RenderNode) {
         (self.size, RenderNode::Leaf)
     }
 
@@ -164,7 +164,7 @@ impl Leaf for Padding {
         )
     }
 
-    fn paint(&self, pos: Point, display: &mut Draw565) {}
+    fn paint(&self, _pos: Point, _display: &mut Draw565) {}
 }
 
 pub struct Text {
@@ -182,7 +182,7 @@ impl Leaf for Text {
         self.val.to_string()
     }
 
-    fn render(&self, constraints: constraints::Constraints) -> (Size, RenderNode) {
+    fn render(&self, _constraints: constraints::Constraints) -> (Size, RenderNode) {
         (Size::new(50, 10), RenderNode::Leaf)
     }
 
@@ -216,12 +216,12 @@ impl Leaf for Number {
 
     fn render(
         &self,
-        constraints: constraints::Constraints,
+        _constraints: constraints::Constraints,
     ) -> (Size, RenderNode) {
         (Size::new(50, 10), RenderNode::Leaf)
     }
 
-    fn paint(&self, pos: Point, display: &mut Draw565) {
+    fn paint(&self, _pos: Point, _display: &mut Draw565) {
         todo!()
     }
 }
@@ -283,12 +283,12 @@ where
                 child,
             }) => {
                 let new_offset = origin_offset + offset;
-                renderer.paint(new_offset, &mut self.draw_target);
+                renderer.paint(new_offset, self.draw_target);
                 self.paint(*child, new_offset);
             }
             RenderNode::MultiChild {
                 offset,
-                size,
+                size: _,
                 child,
             } => {
                 let new_offset = origin_offset + offset;

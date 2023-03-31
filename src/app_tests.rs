@@ -53,7 +53,7 @@ fn create_canvas() {
     let mut display: SimulatorDisplay<embedded_graphics::pixelcolor::Rgb565> =
         SimulatorDisplay::new(Size::new(200, 400));
 
-    let mut app = App::new(comp, (), &mut display);
+    let app = App::new(comp, (), &mut display);
 
     app.render(Size::new(64, 64));
 }
