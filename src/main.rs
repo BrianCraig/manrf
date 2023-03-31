@@ -278,7 +278,7 @@ where
         match node {
             RenderNode::SingleChild(RenderData {
                 offset,
-                size,
+                size: _,
                 renderer,
                 child,
             }) => {

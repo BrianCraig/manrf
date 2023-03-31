@@ -1,11 +1,10 @@
 use std::any::TypeId;
-use std::num::NonZeroU16;
 
 use crate::{Padding, Runner};
 
-use super::{App, Box, Component, Number, Stack, Text};
+use super::{App, Box, Component, Stack, Text};
 
-use embedded_graphics::mock_display::MockDisplay;
+
 use embedded_graphics::pixelcolor::raw::RawU16;
 use embedded_graphics::prelude::{Point, RgbColor};
 use embedded_graphics::{geometry::Size, pixelcolor::Rgb565};
