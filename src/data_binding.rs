@@ -19,6 +19,7 @@ pub struct GlobalStore {
     store: HashMap<TypeId, Box<dyn Any>>,
 }
 
+/// This is a global store that can be used to share data between components.
 impl GlobalStore {
     pub fn new() -> Self {
         Self {
@@ -26,10 +27,12 @@ impl GlobalStore {
         }
     }
 
+    /// Inserts a new element into the store.
     pub fn insert<T: Any>(&mut self, element: T) {
         self.store.insert(TypeId::of::<T>(), Box::new(element));
     }
 
+    /// Gets an element from the store. If the element does not exist, it will be created with the default value from `T::default()`.
     pub fn get<T: Any + Default>(&mut self) -> &T {
         let type_id = TypeId::of::<T>();
         match self.store.contains_key(&type_id) {
