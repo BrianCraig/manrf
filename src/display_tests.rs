@@ -1,5 +1,6 @@
 use std::any::TypeId;
 
+use crate::example_components::ComponentDefinition;
 use crate::{Padding, Runner};
 
 use super::{App, Box, Component, Stack, Text};
@@ -20,7 +21,7 @@ static palette: [u16; 16] = [
 
 #[test]
 fn create_canvas() {
-    let comp: Component<()> = |()| {
+    let comp = ComponentDefinition::new(|_store| {
         let size_8 = Size {
             width: 8,
             height: 8,
@@ -30,12 +31,12 @@ fn create_canvas() {
             Box::exactly(size_8, Rgb565::GREEN, None),
             Box::exactly(size_8, Rgb565::BLUE, None),
         ])
-    };
+    });
 
     let mut display: SimulatorDisplay<embedded_graphics::pixelcolor::Rgb565> =
         SimulatorDisplay::new(Size::new(30, 30));
 
-    let mut app = App::new(comp, (), &mut display);
+    let mut app = App::new(comp);
 
     let output_settings = OutputSettingsBuilder::new()
         .max_fps(60)
@@ -47,7 +48,7 @@ fn create_canvas() {
 
     let a = app.render(Size::new(30, 30));
 
-    app.paint(a, Point::default());
+    app.paint(a, &mut display, Point::default());
 
     // window.show_static(&display);
 }
@@ -55,7 +56,7 @@ fn create_canvas() {
 #[test]
 fn create_canvas_2() {
     let size = Size::new(80, 80);
-    let comp: Component<()> = |()| {
+    let comp = ComponentDefinition::new(|_store| {
         let size_8 = Size {
             width: 8,
             height: 8,
@@ -66,11 +67,11 @@ fn create_canvas_2() {
             Box::exactly(size_8, Rgb565::BLUE, None),
             Text::new("This is some Text"),
         ])
-    };
+    });
 
     let mut display = SimulatorDisplay::new(size);
 
-    let mut app = App::new(comp, (), &mut display);
+    let mut app = App::new(comp);
 
     let output_settings = OutputSettingsBuilder::new()
         .max_fps(60)
@@ -82,7 +83,7 @@ fn create_canvas_2() {
 
     let a = app.render(size);
 
-    app.paint(a, Point::default());
+    app.paint(a,  &mut display, Point::default());
 
     // window.show_static(&display);
 }
@@ -91,7 +92,7 @@ fn create_canvas_2() {
 fn mutate_component() {
     let size = Size::new(80, 80);
 
-    let comp: Component<_> = |_active: bool| {
+    let comp= ComponentDefinition::new(|_store| {
         let size_8 = Size {
             width: 8,
             height: 8,
@@ -103,11 +104,11 @@ fn mutate_component() {
             Box::exactly(size_8, Rgb565::BLUE, None),
             Text::new("This is some Text"),
         ])
-    };
+    });
 
     let mut display = SimulatorDisplay::new(size);
 
-    let mut app = App::new(comp, false, &mut display);
+    let mut app = App::new(comp);
 
     let output_settings = OutputSettingsBuilder::new()
         .max_fps(60)
@@ -119,7 +120,7 @@ fn mutate_component() {
 
     let a = app.render(size);
 
-    app.paint(a, Point::default());
+    app.paint(a, &mut display, Point::default());
 
     // window.show_static(&display);
 }

@@ -1,6 +1,7 @@
 #![feature(fn_traits)]
 
 use constraints::Constraints;
+use data_binding::GlobalStore;
 use embedded_graphics::draw_target::DrawTarget;
 use embedded_graphics::geometry::Size;
 use embedded_graphics::mono_font::{ascii::FONT_6X10, MonoTextStyle};
@@ -9,6 +10,7 @@ use embedded_graphics::prelude::{Point, RgbColor};
 use embedded_graphics::primitives::Rectangle;
 use embedded_graphics::Drawable;
 use embedded_graphics_simulator::SimulatorDisplay;
+use example_components::ComponentDefinition;
 
 use std::rc::Rc;
 
@@ -17,6 +19,8 @@ mod data_binding;
 mod render_tree;
 pub mod event;
 mod example_components;
+mod event_from_simulator;
+mod testing_helpers;
 
 use render_tree::{RenderData, RenderNode};
 
@@ -257,8 +261,16 @@ impl Leaf for Number {
         (Size::new(50, 10), RenderNode::Leaf)
     }
 
-    fn paint(&self, _pos: Point, _display: &mut Draw565) {
-        todo!()
+    fn paint(&self, pos: Point, display: &mut Draw565) {
+        let mut small_style = MonoTextStyle::new(&FONT_6X10, Rgb565::WHITE);
+        small_style.underline_color = embedded_graphics::text::DecorationColor::Custom(Rgb565::RED);
+        small_style.background_color = Some(Rgb565::GREEN);
+        let _ = embedded_graphics::text::Text::new(
+            self.val.to_string().as_str(),
+            pos + Point::new(0, small_style.font.baseline as i32),
+            small_style,
+        )
+        .draw(display);
     }
 }
 
@@ -266,51 +278,43 @@ type Component<T> = fn(T) -> Element;
 
 type Draw565 = SimulatorDisplay<Rgb565>;
 
-trait Runner {
-    fn to_string(&self) -> String;
-    fn render(&self, size: Size) -> RenderNode;
-    fn paint(&mut self, node: RenderNode, offset: Point);
+pub trait Runner {
+    fn to_string(&mut self) -> String;
+    fn render(&mut self, size: Size) -> RenderNode;
+    fn paint(&mut self, node: RenderNode, target:&mut Draw565, offset: Point);
 }
 
-pub struct App<'a, T>
-where
-    T: Copy,
+pub struct App
 {
-    root: Component<T>,
-    defaults: T,
-    draw_target: &'a mut Draw565,
+    store: GlobalStore,
+    root: ComponentDefinition,
 }
 
-impl<'a, T> App<'a, T>
-where
-    T: Copy,
+impl App
 {
-    pub fn new(root: Component<T>, defaults: T, draw_target: &'a mut Draw565) -> Self {
+    pub fn new(root:ComponentDefinition) -> Self {
         Self {
             root,
-            defaults,
-            draw_target,
+            store: GlobalStore::new(),
         }
+    }
+
+    fn handle_event(&mut self, event: event::Event) {
+        self.root.run_event_listener(&mut self.store, event);
     }
 }
 
-impl<'a, T> Runner for App<'a, T>
-where
-    T: Copy,
+impl Runner for App
 {
-    fn to_string(&self) -> String {
-        let t = (self.defaults,);
-        let r = self.root.call(t);
-        r.to_string()
+    fn to_string(&mut self) -> String {
+        self.root.render(&mut self.store).to_string()
     }
 
-    fn render(&self, size: Size) -> RenderNode {
-        let t = (self.defaults,);
-        let r = self.root.call(t);
-        r.render(constraints::Constraints::up_to(size)).1
+    fn render(&mut self, size: Size) -> RenderNode {
+        self.root.render(&mut self.store).render(constraints::Constraints::up_to(size)).1
     }
 
-    fn paint(&mut self, node: RenderNode, origin_offset: Point) {
+    fn paint(&mut self, node: RenderNode,target:&mut Draw565,  origin_offset: Point) {
         match node {
             RenderNode::SingleChild(RenderData {
                 offset,
@@ -319,8 +323,8 @@ where
                 child,
             }) => {
                 let new_offset = origin_offset + offset;
-                renderer.paint(new_offset, self.draw_target);
-                self.paint(*child, new_offset);
+                renderer.paint(new_offset, target);
+                self.paint(*child, target, new_offset);
             }
             RenderNode::MultiChild {
                 offset,
@@ -329,7 +333,7 @@ where
             } => {
                 let new_offset = origin_offset + offset;
                 for item in child {
-                    self.paint(item, new_offset);
+                    self.paint(item, target, new_offset);
                 }
             }
             RenderNode::Leaf => {}

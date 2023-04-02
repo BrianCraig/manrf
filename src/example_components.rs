@@ -1,4 +1,6 @@
-use crate::{Element, event::{Event, Button}, data_binding::GlobalStore, Text, Number};
+use embedded_graphics::prelude::Size;
+
+use crate::{Element, event::{Event, Button}, data_binding::GlobalStore, Text, Number, testing_helpers::test_in_window};
 
 type EventFunction = fn(&mut GlobalStore, Event);
 
@@ -97,4 +99,43 @@ fn component_list_selector_event() {
     assert_eq!(component.render(&mut store).to_string(), "[Select an element, 3]");
     component.run_event_listener(&mut store, Event::ButtonPressed(Button::Principal));
     assert_eq!(component.render(&mut store).to_string(), "[Select an element, 1]");
+}
+
+#[ignore]
+#[test]
+fn component_list_selector_manual() {
+    #[derive(Clone)]
+    pub struct AppState {
+        elements: Vec<i32>,
+        selected: usize
+    }
+
+    impl Default for AppState {
+        fn default() -> Self {
+            Self {
+                elements: vec![1, 2, 3],
+                selected: 0
+            }
+        }
+    }
+
+    let mut component = ComponentDefinition::new(|store| {
+        let state = store.get::<AppState>();
+        crate::Stack::col(vec![
+            crate::Text::new("selector"),
+            crate::ListSelector::new(state.elements.iter().map(|element| {
+                crate::Number::new(*element) as Element
+            }).collect(), state.selected)
+        ])
+    });
+
+    component.events_listener = Some(|store, event| {
+        let mut state = store.get::<AppState>().clone();
+        if let Event::ButtonPressed(Button::Principal) = event {
+            state.selected = (state.selected + 1) % state.elements.len();
+            store.insert(state);
+        }
+    });
+
+    test_in_window(Size::new(100, 100), component, |_, _|());
 }
