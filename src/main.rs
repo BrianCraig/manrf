@@ -30,6 +30,40 @@ pub trait Leaf {
 
 type Element = Rc<dyn Leaf>;
 
+pub struct ListSelector {
+    items: Vec<Element>,
+    selected: usize,
+}
+
+impl ListSelector {
+    pub fn new(items: Vec<Element>, selected: usize) -> Rc<Self> {
+        Rc::new(ListSelector { items, selected })
+    }
+}
+
+impl Leaf for ListSelector {
+    fn to_string(&self) -> String {
+        self.items[self.selected].to_string()
+    }
+
+    fn render(&self, constraints: constraints::Constraints) -> (Size, RenderNode) {
+        let (size, render_node) = self.items[self.selected].render(constraints);
+        (
+            size,
+            RenderNode::SingleChild(RenderData {
+                offset: Point::zero(),
+                child: std::boxed::Box::new(render_node),
+                renderer: self.items[self.selected].clone(),
+                size,
+            }),
+        )
+    }
+
+    fn paint(&self, pos: Point, display: &mut Draw565) {
+        self.items[self.selected].paint(pos, display)
+    }
+}
+
 pub struct Stack {
     items: Vec<Element>,
 }

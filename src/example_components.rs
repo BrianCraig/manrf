@@ -42,6 +42,7 @@ fn component_definition() {
     let mut component = ComponentDefinition::new(|store| {
         Number::new(store.get::<AppState>().counter)
     });
+
     component.events_listener = Some(|store, event| {
         let mut state = store.get::<AppState>().clone();
         if let Event::ButtonPressed(Button::Principal) = event {
@@ -55,4 +56,45 @@ fn component_definition() {
     assert_eq!(component.render(&mut store).to_string(), "1");
     component.run_event_listener(&mut store, Event::ButtonPressed(Button::Secondary));
     assert_eq!(component.render(&mut store).to_string(), "1");
+}
+
+#[test]
+fn component_list_selector_event() {
+    #[derive(Default, Clone)]
+    pub struct AppState {
+        elements: Vec<i32>,
+        selected: usize
+    }
+
+    let mut store = GlobalStore::new();
+    let mut component = ComponentDefinition::new(|store| {
+        let state = store.get::<AppState>();
+        crate::Stack::col(vec![
+            crate::Text::new("Select an element"),
+            crate::ListSelector::new(state.elements.iter().map(|element| {
+                crate::Number::new(*element) as Element
+            }).collect(), state.selected)
+        ])
+    });
+
+    component.events_listener = Some(|store, event| {
+        let mut state = store.get::<AppState>().clone();
+        if let Event::ButtonPressed(Button::Principal) = event {
+            state.selected = (state.selected + 1) % state.elements.len();
+            store.insert(state);
+        }
+    });
+
+    store.insert(AppState {
+        elements: vec![1, 2, 3],
+        selected: 0
+    });
+
+    assert_eq!(component.render(&mut store).to_string(), "[Select an element, 1]");
+    component.run_event_listener(&mut store, Event::ButtonPressed(Button::Principal));
+    assert_eq!(component.render(&mut store).to_string(), "[Select an element, 2]");
+    component.run_event_listener(&mut store, Event::ButtonPressed(Button::Principal));
+    assert_eq!(component.render(&mut store).to_string(), "[Select an element, 3]");
+    component.run_event_listener(&mut store, Event::ButtonPressed(Button::Principal));
+    assert_eq!(component.render(&mut store).to_string(), "[Select an element, 1]");
 }
