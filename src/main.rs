@@ -1,4 +1,5 @@
 #![feature(fn_traits)]
+#![feature(downcast_unchecked)]
 
 use constraints::Constraints;
 use data_binding::GlobalStore;
@@ -16,13 +17,14 @@ use std::rc::Rc;
 
 mod constraints;
 mod data_binding;
-mod render_tree;
 pub mod event;
-mod example_components;
 mod event_from_simulator;
+mod example_components;
+mod full_example_test;
+mod render_tree;
 mod testing_helpers;
 
-use render_tree::{RenderData, RenderNode};
+use render_tree::RenderNode;
 
 fn main() {}
 
@@ -54,12 +56,12 @@ impl Leaf for ListSelector {
         let (size, render_node) = self.items[self.selected].render(constraints);
         (
             size,
-            RenderNode::SingleChild(RenderData {
+            RenderNode::SingleChild {
                 offset: Point::zero(),
                 child: std::boxed::Box::new(render_node),
                 renderer: self.items[self.selected].clone(),
                 size,
-            }),
+            },
         )
     }
 
@@ -106,12 +108,12 @@ impl Leaf for Stack {
                 };
                 sum += size.height;
                 max_cross = max_cross.max(size.width);
-                RenderNode::SingleChild(RenderData {
+                RenderNode::SingleChild {
                     offset: new_offset,
                     child: std::boxed::Box::new(render_node),
                     renderer: comp.clone(),
                     size,
-                })
+                }
             })
             .collect();
 
@@ -139,11 +141,12 @@ impl Leaf for Stack {
 pub struct Box {
     size: Size,
     color: Rgb565,
+    child: Option<Element>,
 }
 
 impl Box {
-    pub fn exactly(size: Size, color: Rgb565, _: Option<i32>) -> Rc<Self> {
-        Rc::new(Self { size, color })
+    pub fn exactly(size: Size, color: Rgb565, child: Option<Element>) -> Rc<Self> {
+        Rc::new(Self { size, color, child })
     }
 }
 
@@ -153,7 +156,24 @@ impl Leaf for Box {
     }
 
     fn render(&self, _constraints: constraints::Constraints) -> (Size, RenderNode) {
-        (self.size, RenderNode::Leaf)
+        (
+            self.size,
+            match &self.child {
+                Some(child) => {
+                    let (size, render_node) = child.render(constraints::Constraints {
+                        min: self.size,
+                        max: self.size,
+                    });
+                    RenderNode::SingleChild {
+                        offset: Point::zero(),
+                        child: std::boxed::Box::new(render_node),
+                        renderer: child.clone(),
+                        size,
+                    }
+                }
+                None => RenderNode::Leaf,
+            },
+        )
     }
 
     fn paint(&self, pos: Point, display: &mut Draw565) {
@@ -195,12 +215,12 @@ impl Leaf for Padding {
         let this_size = child.0 + double_padding;
         (
             this_size,
-            RenderNode::SingleChild(RenderData {
+            RenderNode::SingleChild {
                 offset,
                 size: child.0,
                 renderer: self.child.clone(),
                 child: std::boxed::Box::new(child.1),
-            }),
+            },
         )
     }
 
@@ -254,10 +274,7 @@ impl Leaf for Number {
         self.val.to_string()
     }
 
-    fn render(
-        &self,
-        _constraints: constraints::Constraints,
-    ) -> (Size, RenderNode) {
+    fn render(&self, _constraints: constraints::Constraints) -> (Size, RenderNode) {
         (Size::new(50, 10), RenderNode::Leaf)
     }
 
@@ -274,25 +291,119 @@ impl Leaf for Number {
     }
 }
 
-type Component<T> = fn(T) -> Element;
+pub struct Border {
+    color: Rgb565,
+    child: Element,
+    size: u8,
+}
+
+impl Border {
+    pub fn bottom(size: u8, color: Rgb565, child: Element) -> Rc<Self> {
+        Rc::new(Self { color, child, size })
+    }
+}
+
+impl Leaf for Border {
+    fn to_string(&self) -> String {
+        todo!()
+    }
+
+    fn render(&self, constraints: constraints::Constraints) -> (Size, RenderNode) {
+        let child = self.child.render(constraints);
+        let this_size = child.0 + Size::new(0, self.size as u32);
+        (
+            this_size,
+            RenderNode::SingleChild {
+                offset: Point::new(0, self.size as i32),
+                size: child.0,
+                renderer: self.child.clone(),
+                child: std::boxed::Box::new(child.1),
+            },
+        )
+    }
+
+    fn paint(&self, pos: Point, display: &mut Draw565) {
+        let _ = display.fill_solid(
+            &Rectangle {
+                top_left: pos,
+                size: Size::new(100, self.size as u32),
+            },
+            self.color,
+        );
+    }
+}
+
+pub struct ItemSelector<'a, T> {
+    items: &'a Vec<T>,
+    selected: usize,
+    on_change: fn(&mut GlobalStore, T),
+    render_item: fn(&T, bool) -> Element,
+}
+
+impl<'a, T> ItemSelector<'a, T> {
+    pub fn new(
+        items: &'a Vec<T>,
+        on_change: fn(&mut GlobalStore, T),
+        render_item: fn(&T, bool) -> Element,
+    ) -> Rc<Self> {
+        Rc::new(Self {
+            items,
+            selected: 0,
+            on_change,
+            render_item,
+        })
+    }
+}
+
+impl<'a, T> Leaf for ItemSelector<'a, T> {
+    fn to_string(&self) -> String {
+        todo!()
+    }
+
+    fn render(&self, constraints: constraints::Constraints) -> (Size, RenderNode) {
+        let mut size = Size::new(0, 0);
+        let mut children = Vec::new();
+        for (index, item) in self.items.iter().enumerate() {
+            let selected = index == self.selected;
+            let render = (self.render_item)(item, selected);
+            let child = render.render(constraints);
+            size.width = size.width.max(child.0.width);
+            size.height += child.0.height;
+            children.push(RenderNode::SingleChild {
+                offset: Point::new(0, size.height as i32),
+                size: child.0,
+                renderer: render,
+                child: std::boxed::Box::new(child.1),
+            });
+        }
+        (
+            size,
+            RenderNode::MultiChild {
+                offset: Point::new(0, 0),
+                size,
+                child: children,
+            },
+        )
+    }
+
+    fn paint(&self, pos: Point, display: &mut Draw565) {}
+}
 
 type Draw565 = SimulatorDisplay<Rgb565>;
 
 pub trait Runner {
     fn to_string(&mut self) -> String;
     fn render(&mut self, size: Size) -> RenderNode;
-    fn paint(&mut self, node: RenderNode, target:&mut Draw565, offset: Point);
+    fn paint(&mut self, node: RenderNode, target: &mut Draw565, offset: Point);
 }
 
-pub struct App
-{
+pub struct App {
     store: GlobalStore,
     root: ComponentDefinition,
 }
 
-impl App
-{
-    pub fn new(root:ComponentDefinition) -> Self {
+impl App {
+    pub fn new(root: ComponentDefinition) -> Self {
         Self {
             root,
             store: GlobalStore::new(),
@@ -304,24 +415,26 @@ impl App
     }
 }
 
-impl Runner for App
-{
+impl Runner for App {
     fn to_string(&mut self) -> String {
         self.root.render(&mut self.store).to_string()
     }
 
     fn render(&mut self, size: Size) -> RenderNode {
-        self.root.render(&mut self.store).render(constraints::Constraints::up_to(size)).1
+        self.root
+            .render(&mut self.store)
+            .render(constraints::Constraints::up_to(size))
+            .1
     }
 
-    fn paint(&mut self, node: RenderNode,target:&mut Draw565,  origin_offset: Point) {
+    fn paint(&mut self, node: RenderNode, target: &mut Draw565, origin_offset: Point) {
         match node {
-            RenderNode::SingleChild(RenderData {
+            RenderNode::SingleChild {
                 offset,
                 size: _,
                 renderer,
                 child,
-            }) => {
+            } => {
                 let new_offset = origin_offset + offset;
                 renderer.paint(new_offset, target);
                 self.paint(*child, target, new_offset);

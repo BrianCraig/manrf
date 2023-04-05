@@ -137,5 +137,5 @@ fn component_list_selector_manual() {
         }
     });
 
-    test_in_window(Size::new(100, 100), component, |_, _|());
+    test_in_window(Size::new(128, 128), component, |_, _|());
 }

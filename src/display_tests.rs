@@ -3,7 +3,7 @@ use std::any::TypeId;
 use crate::example_components::ComponentDefinition;
 use crate::{Padding, Runner};
 
-use super::{App, Box, Component, Stack, Text};
+use super::{App, Box, Stack, Text};
 
 
 use embedded_graphics::pixelcolor::raw::RawU16;
