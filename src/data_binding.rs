@@ -1,5 +1,5 @@
 use core::any::{Any, TypeId};
-use std::collections::HashMap;
+use std::{collections::HashMap, rc::Rc};
 
 pub enum DataBindStore {
     /// One per app
