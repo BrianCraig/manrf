@@ -27,14 +27,14 @@ impl TryFrom<SimulatorEvent> for Event {
                 MouseButton::Left => Ok(Event::ButtonPressed(Button::Principal)),
                 MouseButton::Right => Ok(Event::ButtonPressed(Button::Secondary)),
                 MouseButton::Middle => Ok(Event::ButtonPressed(Button::Back)),
-                _ => return Err(()),
+                _ => Err(()),
             },
             SimulatorEvent::KeyDown { keycode, .. } => match keycode {
                 Keycode::Up => Ok(Event::DirectionPressed(Direction::Up)),
                 Keycode::Down => Ok(Event::DirectionPressed(Direction::Down)),
                 Keycode::Left => Ok(Event::DirectionPressed(Direction::Left)),
                 Keycode::Right => Ok(Event::DirectionPressed(Direction::Right)),
-                _ => return Err(()),
+                _ => Err(()),
             },
             _ => Err(()),
         }

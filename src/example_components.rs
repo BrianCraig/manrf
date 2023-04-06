@@ -1,32 +1,37 @@
+
+
 use embedded_graphics::prelude::Size;
 
-use crate::{Element, event::{Event, Button}, data_binding::GlobalStore, Text, Number, testing_helpers::test_in_window};
+use crate::{
+    event::{Event, Button},
+    Element, testing_helpers::test_in_window, Number,
+};
 
-type EventFunction = fn(&mut GlobalStore, Event);
+type EventFunction<T> = fn(&mut T, Event) -> bool;
 
-type ComponentGenerator = fn(&mut GlobalStore) -> Element;
-pub struct ComponentDefinition {
-    generator: ComponentGenerator,
-    events_listener: Option<EventFunction>
+type ComponentGenerator<T> = fn(&mut T) -> Element;
+pub struct ComponentDefinition<T> {
+    generator: ComponentGenerator<T>,
+    events_listener: Option<EventFunction<T>>,
 }
 
-impl ComponentDefinition {
-    pub fn new(generator: ComponentGenerator) -> Self {
+impl<T> ComponentDefinition<T> {
+    pub fn new(generator: ComponentGenerator<T>) -> Self {
         Self {
             generator,
-            events_listener: None
+            events_listener: None,
         }
     }
 
-    pub fn render(&self, store: &mut GlobalStore) -> Element {
+    pub fn render(&self, store: &mut T) -> Element {
         (self.generator)(store)
     }
 
-    pub fn with_events_listener(&mut self, events_listener: EventFunction) {
+    pub fn with_events_listener(&mut self, events_listener: EventFunction<T>) {
         self.events_listener = Some(events_listener);
     }
 
-    pub fn run_event_listener(&self, store: &mut GlobalStore, event: Event) {
+    pub fn run_event_listener(&self, store: &mut T, event: Event) {
         if let Some(events_listener) = self.events_listener {
             events_listener(store, event);
         }
@@ -37,68 +42,87 @@ impl ComponentDefinition {
 fn component_definition() {
     #[derive(Default, Clone)]
     pub struct AppState {
-        counter: i32
+        counter: i32,
     }
 
-    let mut store = GlobalStore::new();
-    let mut component = ComponentDefinition::new(|store| {
-        Number::new(store.get::<AppState>().counter)
+    let mut state = AppState::default();
+    let mut component: ComponentDefinition<AppState> =
+        ComponentDefinition::new(|state| Number::new(state.counter));
+
+    component.events_listener = Some(|state, event| match event {
+        Event::ButtonPressed(Button::Principal) => {
+            state.counter += 1;
+            true
+        }
+        _ => false,
     });
 
-    component.events_listener = Some(|store, event| {
-        let mut state = store.get::<AppState>().clone();
-        if let Event::ButtonPressed(Button::Principal) = event {
-            state.counter += 1;
-            store.insert(state);
-        }
-    });
-    
-    assert_eq!(component.render(&mut store).to_string(), "0");
-    component.run_event_listener(&mut store, Event::ButtonPressed(Button::Principal));
-    assert_eq!(component.render(&mut store).to_string(), "1");
-    component.run_event_listener(&mut store, Event::ButtonPressed(Button::Secondary));
-    assert_eq!(component.render(&mut store).to_string(), "1");
+    assert_eq!(component.render(&mut state).to_string(), "0");
+    component.run_event_listener(&mut state, Event::ButtonPressed(Button::Principal));
+    assert_eq!(component.render(&mut state).to_string(), "1");
+    component.run_event_listener(&mut state, Event::ButtonPressed(Button::Secondary));
+    assert_eq!(component.render(&mut state).to_string(), "1");
 }
 
 #[test]
 fn component_list_selector_event() {
-    #[derive(Default, Clone)]
+    #[derive(Clone)]
     pub struct AppState {
         elements: Vec<i32>,
-        selected: usize
+        selected: usize,
     }
 
-    let mut store = GlobalStore::new();
-    let mut component = ComponentDefinition::new(|store| {
-        let state = store.get::<AppState>();
+    impl Default for AppState {
+        fn default() -> Self {
+            Self {
+                elements: vec![1, 2, 3],
+                selected: 0,
+            }
+        }
+    }
+
+    let mut state = AppState::default();
+    let mut component: ComponentDefinition<AppState> = ComponentDefinition::new(|state| {
         crate::Stack::col(vec![
             crate::Text::new("Select an element"),
-            crate::ListSelector::new(state.elements.iter().map(|element| {
-                crate::Number::new(*element) as Element
-            }).collect(), state.selected)
+            crate::ListSelector::new(
+                state
+                    .elements
+                    .iter()
+                    .map(|element| crate::Number::new(*element) as Element)
+                    .collect(),
+                state.selected,
+            ),
         ])
     });
 
-    component.events_listener = Some(|store, event| {
-        let mut state = store.get::<AppState>().clone();
-        if let Event::ButtonPressed(Button::Principal) = event {
+    component.events_listener = Some(|state, event| match event {
+        Event::ButtonPressed(Button::Principal) => {
             state.selected = (state.selected + 1) % state.elements.len();
-            store.insert(state);
+            true
         }
+        _ => false,
     });
 
-    store.insert(AppState {
-        elements: vec![1, 2, 3],
-        selected: 0
-    });
-
-    assert_eq!(component.render(&mut store).to_string(), "[Select an element, 1]");
-    component.run_event_listener(&mut store, Event::ButtonPressed(Button::Principal));
-    assert_eq!(component.render(&mut store).to_string(), "[Select an element, 2]");
-    component.run_event_listener(&mut store, Event::ButtonPressed(Button::Principal));
-    assert_eq!(component.render(&mut store).to_string(), "[Select an element, 3]");
-    component.run_event_listener(&mut store, Event::ButtonPressed(Button::Principal));
-    assert_eq!(component.render(&mut store).to_string(), "[Select an element, 1]");
+    assert_eq!(
+        component.render(&mut state).to_string(),
+        "[Select an element, 1]"
+    );
+    component.run_event_listener(&mut state, Event::ButtonPressed(Button::Principal));
+    assert_eq!(
+        component.render(&mut state).to_string(),
+        "[Select an element, 2]"
+    );
+    component.run_event_listener(&mut state, Event::ButtonPressed(Button::Principal));
+    assert_eq!(
+        component.render(&mut state).to_string(),
+        "[Select an element, 3]"
+    );
+    component.run_event_listener(&mut state, Event::ButtonPressed(Button::Principal));
+    assert_eq!(
+        component.render(&mut state).to_string(),
+        "[Select an element, 1]"
+    );
 }
 
 #[ignore]
@@ -107,35 +131,40 @@ fn component_list_selector_manual() {
     #[derive(Clone)]
     pub struct AppState {
         elements: Vec<i32>,
-        selected: usize
+        selected: usize,
     }
 
     impl Default for AppState {
         fn default() -> Self {
             Self {
                 elements: vec![1, 2, 3],
-                selected: 0
+                selected: 0,
             }
         }
     }
 
-    let mut component = ComponentDefinition::new(|store| {
-        let state = store.get::<AppState>();
+    let mut component:ComponentDefinition<AppState> = ComponentDefinition::new(|state| {
         crate::Stack::col(vec![
             crate::Text::new("selector"),
-            crate::ListSelector::new(state.elements.iter().map(|element| {
-                crate::Number::new(*element) as Element
-            }).collect(), state.selected)
+            crate::ListSelector::new(
+                state
+                    .elements
+                    .iter()
+                    .map(|element| crate::Number::new(*element) as Element)
+                    .collect(),
+                state.selected,
+            ),
         ])
     });
 
-    component.events_listener = Some(|store, event| {
-        let mut state = store.get::<AppState>().clone();
-        if let Event::ButtonPressed(Button::Principal) = event {
+
+    component.events_listener = Some(|state, event| match event {
+        Event::ButtonPressed(Button::Principal) => {
             state.selected = (state.selected + 1) % state.elements.len();
-            store.insert(state);
+            true
         }
+        _ => false,
     });
 
-    test_in_window(Size::new(128, 128), component, |_, _|());
+    test_in_window(Size::new(128, 128), component, |_, _| ());
 }

@@ -21,7 +21,7 @@ static palette: [u16; 16] = [
 
 #[test]
 fn create_canvas() {
-    let comp = ComponentDefinition::new(|_store| {
+    let comp:ComponentDefinition<()> = ComponentDefinition::new(|_state| {
         let size_8 = Size {
             width: 8,
             height: 8,
@@ -56,7 +56,7 @@ fn create_canvas() {
 #[test]
 fn create_canvas_2() {
     let size = Size::new(80, 80);
-    let comp = ComponentDefinition::new(|_store| {
+    let comp:ComponentDefinition<()> = ComponentDefinition::new(|_state| {
         let size_8 = Size {
             width: 8,
             height: 8,
@@ -92,7 +92,7 @@ fn create_canvas_2() {
 fn mutate_component() {
     let size = Size::new(80, 80);
 
-    let comp= ComponentDefinition::new(|_store| {
+    let comp:ComponentDefinition<()>= ComponentDefinition::new(|_state| {
         let size_8 = Size {
             width: 8,
             height: 8,
@@ -121,8 +121,6 @@ fn mutate_component() {
     let a = app.render(size);
 
     app.paint(a, &mut display, Point::default());
-
-    // window.show_static(&display);
 }
 
 #[test]

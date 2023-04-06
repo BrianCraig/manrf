@@ -7,7 +7,7 @@ use crate::{event::Event, example_components::ComponentDefinition, App, Runner};
 
 type TINR = fn(Size, &mut dyn Runner);
 
-pub fn test_in_window(size: Size, comp: ComponentDefinition, callback: TINR) {
+pub fn test_in_window<T: Default>(size: Size, comp: ComponentDefinition<T>, callback: TINR) {
     let mut display = SimulatorDisplay::new(size);
 
     let mut app = App::new(comp);

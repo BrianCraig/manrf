@@ -22,20 +22,21 @@ mod example_components;
 mod full_example_test;
 mod render_tree;
 mod testing_helpers;
-mod framework;
 mod lol;
 
 use render_tree::RenderNode;
 
 fn main() {}
 
-pub trait Leaf {
-    fn to_string(&self) -> String;
+pub trait ElementTrait {
+    fn to_string(&self) -> String {
+        todo!()
+    }
     fn render(&self, constraints: constraints::Constraints) -> (Size, RenderNode);
-    fn paint(&self, pos: Point, display: &mut Draw565);
+    fn paint(&self, _pos: Point, _display: &mut Draw565) {}
 }
 
-type Element = Rc<dyn Leaf>;
+type Element = Rc<dyn ElementTrait>;
 
 pub struct ListSelector {
     items: Vec<Element>,
@@ -48,7 +49,7 @@ impl ListSelector {
     }
 }
 
-impl Leaf for ListSelector {
+impl ElementTrait for ListSelector {
     fn to_string(&self) -> String {
         self.items[self.selected].to_string()
     }
@@ -81,7 +82,7 @@ impl Stack {
     }
 }
 
-impl Leaf for Stack {
+impl ElementTrait for Stack {
     fn to_string(&self) -> String {
         let coll = self
             .items
@@ -133,10 +134,6 @@ impl Leaf for Stack {
             },
         )
     }
-
-    fn paint(&self, _pos: Point, _display: &mut Draw565) {
-        todo!()
-    }
 }
 
 pub struct Box {
@@ -151,10 +148,8 @@ impl Box {
     }
 }
 
-impl Leaf for Box {
-    fn to_string(&self) -> String {
-        todo!()
-    }
+impl ElementTrait for Box {
+    
 
     fn render(&self, _constraints: constraints::Constraints) -> (Size, RenderNode) {
         (
@@ -199,11 +194,7 @@ impl Padding {
     }
 }
 
-impl Leaf for Padding {
-    fn to_string(&self) -> String {
-        todo!()
-    }
-
+impl ElementTrait for Padding {
     fn render(&self, constraints: Constraints) -> (Size, RenderNode) {
         let double_padding = self.padding * 2;
         let child_constraints = constraints::Constraints {
@@ -225,7 +216,6 @@ impl Leaf for Padding {
         )
     }
 
-    fn paint(&self, _pos: Point, _display: &mut Draw565) {}
 }
 
 pub struct Text {
@@ -238,7 +228,7 @@ impl Text {
     }
 }
 
-impl Leaf for Text {
+impl ElementTrait for Text {
     fn to_string(&self) -> String {
         self.val.to_string()
     }
@@ -270,7 +260,7 @@ impl Number {
     }
 }
 
-impl Leaf for Number {
+impl ElementTrait for Number {
     fn to_string(&self) -> String {
         self.val.to_string()
     }
@@ -304,11 +294,7 @@ impl Border {
     }
 }
 
-impl Leaf for Border {
-    fn to_string(&self) -> String {
-        todo!()
-    }
-
+impl ElementTrait for Border {
     fn render(&self, constraints: constraints::Constraints) -> (Size, RenderNode) {
         let child = self.child.render(constraints);
         let this_size = child.0 + Size::new(0, self.size as u32);
@@ -356,11 +342,7 @@ impl<'a, T> ItemSelector<'a, T> {
     }
 }
 
-impl<'a, T> Leaf for ItemSelector<'a, T> {
-    fn to_string(&self) -> String {
-        todo!()
-    }
-
+impl<'a, T> ElementTrait for ItemSelector<'a, T> {
     fn render(&self, constraints: constraints::Constraints) -> (Size, RenderNode) {
         let mut size = Size::new(0, 0);
         let mut children = Vec::new();
@@ -387,7 +369,6 @@ impl<'a, T> Leaf for ItemSelector<'a, T> {
         )
     }
 
-    fn paint(&self, pos: Point, display: &mut Draw565) {}
 }
 
 type Draw565 = SimulatorDisplay<Rgb565>;
@@ -398,32 +379,32 @@ pub trait Runner {
     fn paint(&mut self, node: RenderNode, target: &mut Draw565, offset: Point);
 }
 
-pub struct App {
-    store: GlobalStore,
-    root: ComponentDefinition,
+pub struct App<T> where T: Default {
+    state: T,
+    root: ComponentDefinition<T>,
 }
 
-impl App {
-    pub fn new(root: ComponentDefinition) -> Self {
+impl<T> App<T> where T: Default {
+    pub fn new(root: ComponentDefinition<T>) -> Self {
         Self {
             root,
-            store: GlobalStore::new(),
+            state: T::default(),
         }
     }
 
     fn handle_event(&mut self, event: event::Event) {
-        self.root.run_event_listener(&mut self.store, event);
+        self.root.run_event_listener(&mut self.state, event);
     }
 }
 
-impl Runner for App {
+impl<T> Runner for App<T> where T: Default {
     fn to_string(&mut self) -> String {
-        self.root.render(&mut self.store).to_string()
+        self.root.render(&mut self.state).to_string()
     }
 
     fn render(&mut self, size: Size) -> RenderNode {
         self.root
-            .render(&mut self.store)
+            .render(&mut self.state)
             .render(constraints::Constraints::up_to(size))
             .1
     }
