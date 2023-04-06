@@ -9,7 +9,7 @@ use crate::{
 
 type EventFunction<T> = fn(&mut T, Event) -> bool;
 
-type ComponentGenerator<T> = fn(&mut T) -> Element;
+type ComponentGenerator<T> = fn(&mut T) -> Element<T>;
 pub struct ComponentDefinition<T> {
     generator: ComponentGenerator<T>,
     events_listener: Option<EventFunction<T>>,
@@ -23,7 +23,7 @@ impl<T> ComponentDefinition<T> {
         }
     }
 
-    pub fn render(&self, store: &mut T) -> Element {
+    pub fn render(&self, store: &mut T) -> Element<T> {
         (self.generator)(store)
     }
 
@@ -89,7 +89,7 @@ fn component_list_selector_event() {
                 state
                     .elements
                     .iter()
-                    .map(|element| crate::Number::new(*element) as Element)
+                    .map(|element| crate::Number::new(*element) as Element<AppState>)
                     .collect(),
                 state.selected,
             ),
@@ -150,7 +150,7 @@ fn component_list_selector_manual() {
                 state
                     .elements
                     .iter()
-                    .map(|element| crate::Number::new(*element) as Element)
+                    .map(|element| crate::Number::new(*element) as Element<AppState>)
                     .collect(),
                 state.selected,
             ),

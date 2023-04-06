@@ -10,6 +10,7 @@ use embedded_graphics::prelude::{Point, RgbColor};
 use embedded_graphics::primitives::Rectangle;
 use embedded_graphics::Drawable;
 use embedded_graphics_simulator::SimulatorDisplay;
+use event::{Button, Direction, Event};
 use example_components::ComponentDefinition;
 
 use std::rc::Rc;
@@ -20,42 +21,45 @@ pub mod event;
 mod event_from_simulator;
 mod example_components;
 mod full_example_test;
+mod lol;
 mod render_tree;
 mod testing_helpers;
-mod lol;
 
 use render_tree::RenderNode;
 
 fn main() {}
 
-pub trait ElementTrait {
+pub trait ElementTrait<S> {
     fn to_string(&self) -> String {
         todo!()
     }
-    fn render(&self, constraints: constraints::Constraints) -> (Size, RenderNode);
+    fn render(&self, constraints: constraints::Constraints, state: &S) -> (Size, RenderNode<S>);
     fn paint(&self, _pos: Point, _display: &mut Draw565) {}
+    fn event_handler(&self, state: &mut S, event: Event) -> bool {
+        false
+    }
 }
 
-type Element = Rc<dyn ElementTrait>;
+type Element<S> = Rc<dyn ElementTrait<S>>;
 
-pub struct ListSelector {
-    items: Vec<Element>,
+pub struct ListSelector<S> {
+    items: Vec<Element<S>>,
     selected: usize,
 }
 
-impl ListSelector {
-    pub fn new(items: Vec<Element>, selected: usize) -> Rc<Self> {
+impl<S> ListSelector<S> {
+    pub fn new(items: Vec<Element<S>>, selected: usize) -> Rc<Self> {
         Rc::new(ListSelector { items, selected })
     }
 }
 
-impl ElementTrait for ListSelector {
+impl<S> ElementTrait<S> for ListSelector<S> {
     fn to_string(&self) -> String {
         self.items[self.selected].to_string()
     }
 
-    fn render(&self, constraints: constraints::Constraints) -> (Size, RenderNode) {
-        let (size, render_node) = self.items[self.selected].render(constraints);
+    fn render(&self, constraints: constraints::Constraints, state: &S) -> (Size, RenderNode<S>) {
+        let (size, render_node) = self.items[self.selected].render(constraints, state);
         (
             size,
             RenderNode::SingleChild {
@@ -72,17 +76,17 @@ impl ElementTrait for ListSelector {
     }
 }
 
-pub struct Stack {
-    items: Vec<Element>,
+pub struct Stack<S> {
+    items: Vec<Element<S>>,
 }
 
-impl Stack {
-    pub fn col(items: Vec<Element>) -> Rc<Self> {
+impl<S> Stack<S> {
+    pub fn col(items: Vec<Element<S>>) -> Rc<Self> {
         Rc::new(Stack { items })
     }
 }
 
-impl ElementTrait for Stack {
+impl<S> ElementTrait<S> for Stack<S> {
     fn to_string(&self) -> String {
         let coll = self
             .items
@@ -93,7 +97,7 @@ impl ElementTrait for Stack {
         format!("[{}]", coll)
     }
 
-    fn render(&self, constraints: constraints::Constraints) -> (Size, RenderNode) {
+    fn render(&self, constraints: constraints::Constraints, state: &S) -> (Size, RenderNode<S>) {
         // we keep the constraints from the parent;
 
         let mut sum = 0_u32;
@@ -102,7 +106,7 @@ impl ElementTrait for Stack {
         let render_child: Vec<_> = self
             .items
             .iter()
-            .map(|item| (item, item.render(constraints)))
+            .map(|item| (item, item.render(constraints, state)))
             .map(|(comp, (size, render_node))| {
                 let new_offset = Point {
                     x: 0,
@@ -136,30 +140,31 @@ impl ElementTrait for Stack {
     }
 }
 
-pub struct Box {
+pub struct Box<S> {
     size: Size,
     color: Rgb565,
-    child: Option<Element>,
+    child: Option<Element<S>>,
 }
 
-impl Box {
-    pub fn exactly(size: Size, color: Rgb565, child: Option<Element>) -> Rc<Self> {
+impl<S> Box<S> {
+    pub fn exactly(size: Size, color: Rgb565, child: Option<Element<S>>) -> Rc<Self> {
         Rc::new(Self { size, color, child })
     }
 }
 
-impl ElementTrait for Box {
-    
-
-    fn render(&self, _constraints: constraints::Constraints) -> (Size, RenderNode) {
+impl<S> ElementTrait<S> for Box<S> {
+    fn render(&self, constraints: constraints::Constraints, state: &S) -> (Size, RenderNode<S>) {
         (
             self.size,
             match &self.child {
                 Some(child) => {
-                    let (size, render_node) = child.render(constraints::Constraints {
-                        min: self.size,
-                        max: self.size,
-                    });
+                    let (size, render_node) = child.render(
+                        constraints::Constraints {
+                            min: self.size,
+                            max: self.size,
+                        },
+                        state,
+                    );
                     RenderNode::SingleChild {
                         offset: Point::zero(),
                         child: std::boxed::Box::new(render_node),
@@ -183,25 +188,25 @@ impl ElementTrait for Box {
     }
 }
 
-pub struct Padding {
+pub struct Padding<S> {
     padding: Size,
-    child: Element,
+    child: Element<S>,
 }
 
-impl Padding {
-    pub fn new(padding: Size, child: Element) -> Rc<Self> {
+impl<S> Padding<S> {
+    pub fn new(padding: Size, child: Element<S>) -> Rc<Self> {
         Rc::new(Self { padding, child })
     }
 }
 
-impl ElementTrait for Padding {
-    fn render(&self, constraints: Constraints) -> (Size, RenderNode) {
+impl<S> ElementTrait<S> for Padding<S> {
+    fn render(&self, constraints: constraints::Constraints, state: &S) -> (Size, RenderNode<S>) {
         let double_padding = self.padding * 2;
         let child_constraints = constraints::Constraints {
             min: constraints.min + double_padding,
             max: constraints.max - double_padding,
         };
-        let child = self.child.render(child_constraints);
+        let child = self.child.render(child_constraints, state);
 
         let offset = Point::new(self.padding.width as i32, self.padding.height as i32);
         let this_size = child.0 + double_padding;
@@ -215,7 +220,6 @@ impl ElementTrait for Padding {
             },
         )
     }
-
 }
 
 pub struct Text {
@@ -228,12 +232,12 @@ impl Text {
     }
 }
 
-impl ElementTrait for Text {
+impl<S> ElementTrait<S> for Text {
     fn to_string(&self) -> String {
         self.val.to_string()
     }
 
-    fn render(&self, _constraints: constraints::Constraints) -> (Size, RenderNode) {
+    fn render(&self, _constraints: constraints::Constraints, _state: &S) -> (Size, RenderNode<S>) {
         (Size::new(50, 10), RenderNode::Leaf)
     }
 
@@ -260,12 +264,12 @@ impl Number {
     }
 }
 
-impl ElementTrait for Number {
+impl<S> ElementTrait<S> for Number {
     fn to_string(&self) -> String {
         self.val.to_string()
     }
 
-    fn render(&self, _constraints: constraints::Constraints) -> (Size, RenderNode) {
+    fn render(&self, _constraints: constraints::Constraints, _state: &S) -> (Size, RenderNode<S>) {
         (Size::new(50, 10), RenderNode::Leaf)
     }
 
@@ -282,21 +286,21 @@ impl ElementTrait for Number {
     }
 }
 
-pub struct Border {
+pub struct Border<S> {
     color: Rgb565,
-    child: Element,
+    child: Element<S>,
     size: u8,
 }
 
-impl Border {
-    pub fn bottom(size: u8, color: Rgb565, child: Element) -> Rc<Self> {
+impl<S> Border<S> {
+    pub fn bottom(size: u8, color: Rgb565, child: Element<S>) -> Rc<Self> {
         Rc::new(Self { color, child, size })
     }
 }
 
-impl ElementTrait for Border {
-    fn render(&self, constraints: constraints::Constraints) -> (Size, RenderNode) {
-        let child = self.child.render(constraints);
+impl<S> ElementTrait<S> for Border<S> {
+    fn render(&self, constraints: constraints::Constraints, state: &S) -> (Size, RenderNode<S>) {
+        let child = self.child.render(constraints, state);
         let this_size = child.0 + Size::new(0, self.size as u32);
         (
             this_size,
@@ -320,36 +324,44 @@ impl ElementTrait for Border {
     }
 }
 
-pub struct ItemSelector<'a, T> {
-    items: &'a Vec<T>,
-    selected: usize,
-    on_change: fn(&mut GlobalStore, T),
-    render_item: fn(&T, bool) -> Element,
+#[derive(Default, Clone)]
+pub struct ItemSelectorState {
+    active: usize,
+    selected: Option<usize>,
+}
+pub struct ItemSelector<S, T> {
+    items_lookup: fn(&S) -> &Vec<T>,
+    selector_state_lookup: fn(&S) -> ItemSelectorState,
+    set_selector_state: fn(&mut S, ItemSelectorState),
+    render_item: fn(&T, bool) -> Element<S>,
 }
 
-impl<'a, T> ItemSelector<'a, T> {
+impl<S, T> ItemSelector<S, T> {
     pub fn new(
-        items: &'a Vec<T>,
-        on_change: fn(&mut GlobalStore, T),
-        render_item: fn(&T, bool) -> Element,
+        items_lookup: fn(&S) -> &Vec<T>,
+        selector_state_lookup: fn(&S) -> ItemSelectorState,
+        set_selector_state: fn(&mut S, ItemSelectorState),
+        render_item: fn(&T, bool) -> Element<S>,
     ) -> Rc<Self> {
         Rc::new(Self {
-            items,
-            selected: 0,
-            on_change,
+            items_lookup,
+            selector_state_lookup,
+            set_selector_state,
             render_item,
         })
     }
 }
 
-impl<'a, T> ElementTrait for ItemSelector<'a, T> {
-    fn render(&self, constraints: constraints::Constraints) -> (Size, RenderNode) {
+impl<S, T> ElementTrait<S> for ItemSelector<S, T> {
+    fn render(&self, constraints: constraints::Constraints, state: &S) -> (Size, RenderNode<S>) {
         let mut size = Size::new(0, 0);
         let mut children = Vec::new();
-        for (index, item) in self.items.iter().enumerate() {
-            let selected = index == self.selected;
-            let render = (self.render_item)(item, selected);
-            let child = render.render(constraints);
+        let items = (self.items_lookup)(state);
+        let element_state = (self.selector_state_lookup)(state);
+        for (index, item) in items.iter().enumerate() {
+            let active = index == element_state.active;
+            let render = (self.render_item)(item, active);
+            let child = render.render(constraints, state);
             size.width = size.width.max(child.0.width);
             size.height += child.0.height;
             children.push(RenderNode::SingleChild {
@@ -369,22 +381,54 @@ impl<'a, T> ElementTrait for ItemSelector<'a, T> {
         )
     }
 
+    fn event_handler(&self, state: &mut S, event: event::Event) -> bool {
+        let mut element_state = (self.selector_state_lookup)(state);
+        match event {
+            Event::DirectionPressed(Direction::Up) => {
+                if element_state.active > 0 {
+                    element_state.active -= 1;
+                    (self.set_selector_state)(state, element_state);
+                }
+                true
+            }
+            Event::DirectionPressed(Direction::Down) => {
+                let items = (self.items_lookup)(state);
+                if element_state.active < items.len() - 1 {
+                    element_state.active += 1;
+                    (self.set_selector_state)(state, element_state);
+                }
+                true
+            }
+            Event::ButtonPressed(Button::Principal) => {
+                element_state.selected = Some(element_state.active);
+                (self.set_selector_state)(state, element_state);
+                true
+            }
+            _ => false,
+        }
+    }
 }
 
 type Draw565 = SimulatorDisplay<Rgb565>;
 
-pub trait Runner {
+pub trait Runner<S> {
     fn to_string(&mut self) -> String;
-    fn render(&mut self, size: Size) -> RenderNode;
-    fn paint(&mut self, node: RenderNode, target: &mut Draw565, offset: Point);
+    fn render(&mut self, size: Size) -> RenderNode<S>;
+    fn paint(&mut self, node: RenderNode<S>, target: &mut Draw565, offset: Point);
 }
 
-pub struct App<T> where T: Default {
+pub struct App<T>
+where
+    T: Default,
+{
     state: T,
     root: ComponentDefinition<T>,
 }
 
-impl<T> App<T> where T: Default {
+impl<T> App<T>
+where
+    T: Default,
+{
     pub fn new(root: ComponentDefinition<T>) -> Self {
         Self {
             root,
@@ -397,19 +441,22 @@ impl<T> App<T> where T: Default {
     }
 }
 
-impl<T> Runner for App<T> where T: Default {
+impl<T> Runner<T> for App<T>
+where
+    T: Default,
+{
     fn to_string(&mut self) -> String {
         self.root.render(&mut self.state).to_string()
     }
 
-    fn render(&mut self, size: Size) -> RenderNode {
+    fn render(&mut self, size: Size) -> RenderNode<T> {
         self.root
             .render(&mut self.state)
-            .render(constraints::Constraints::up_to(size))
+            .render(constraints::Constraints::up_to(size), &self.state)
             .1
     }
 
-    fn paint(&mut self, node: RenderNode, target: &mut Draw565, origin_offset: Point) {
+    fn paint(&mut self, node: RenderNode<T>, target: &mut Draw565, origin_offset: Point) {
         match node {
             RenderNode::SingleChild {
                 offset,

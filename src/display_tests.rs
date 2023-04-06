@@ -122,12 +122,3 @@ fn mutate_component() {
 
     app.paint(a, &mut display, Point::default());
 }
-
-#[test]
-fn create_colors() {
-    let a: Rgb565 = Rgb565::from(RawU16::from(0xFEA0_u16));
-    let a: Rgb565 = a;
-    println!("{:?}", a);
-    let a = TypeId::of::<Box>();
-    println!("{:?}", a == TypeId::of::<Text>());
-}

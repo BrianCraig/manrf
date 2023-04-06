@@ -1,7 +1,9 @@
 use embedded_graphics::{
-    pixelcolor::{raw::RawU16, Rgb565}, prelude::Size,
+    pixelcolor::{raw::RawU16, Rgb565},
+    prelude::Size,
 };
 
+use crate::{ItemSelector, ItemSelectorState};
 
 static PALETTE1: [u16; 4] = [0x001F_u16, 0x1CE7_u16, 0x7BEF_u16, 0xFFFF_u16];
 static PALETTE2: [u16; 4] = [0x0841_u16, 0x4A49_u16, 0xBDF7_u16, 0xFFE7_u16];
@@ -16,8 +18,10 @@ fn into565(palette: &[u16; 4], color: u8) -> Rgb565 {
 #[ignore]
 #[test]
 fn create_keys_app() {
-    use crate::{example_components::ComponentDefinition, Stack, Border, Text, Element, testing_helpers::test_in_window};
-
+    use crate::{
+        example_components::ComponentDefinition, testing_helpers::test_in_window, Border, Element,
+        Stack, Text,
+    };
 
     #[derive(Clone)]
     struct Key {
@@ -27,7 +31,7 @@ fn create_keys_app() {
 
     struct AppState {
         keys: Vec<Key>,
-        selectedKey: Option<Key>,
+        keys_selected_state: crate::ItemSelectorState,
     }
 
     impl Default for AppState {
@@ -47,12 +51,25 @@ fn create_keys_app() {
                         key: 3,
                     },
                 ],
-                selectedKey: None,
+                keys_selected_state: ItemSelectorState::default(),
             }
         }
     }
 
-    let main_menu: ComponentDefinition<AppState> = ComponentDefinition::new(|_state| -> Element {
+    let main_menu: ComponentDefinition<AppState> = ComponentDefinition::new(|_state| {
+        let item_selector: std::rc::Rc<ItemSelector<AppState, Key>> = ItemSelector::new(
+            |state| &state.keys,
+            |state| state.keys_selected_state.clone(),
+            |state, new_state| state.keys_selected_state = new_state,
+            |_key: &Key, selected: bool| {
+                crate::Box::exactly(
+                    Size::new(128, 16),
+                    into565(&PALETTE2, if selected { 2 } else { 1 }),
+                    Some(Text::new("lol")),
+                )
+            },
+        );
+
         Stack::col(vec![
             Border::bottom(
                 1,
@@ -62,21 +79,8 @@ fn create_keys_app() {
                     into565(&PALETTE1, 1),
                     Some(Text::new("Main Menu")),
                 ),
-            ) as Element,
-            /*
-                ItemSelector::new(
-                    &store.get::<AppState>().keys,
-                    |_store,_keyy| {
-                    },
-                    |key: &Key, selected: bool| {
-                        Box::exactly(
-                            Size::new(128, 16),
-                            into565(&PALETTE2, if selected {2} else {1}),
-                            Some(Text::new(key.text.clone().as_str())),
-                        )
-                    },
-                ) as Element,
-            */
+            ) as Element<AppState>,
+            item_selector as Element<AppState>,
         ])
     });
 

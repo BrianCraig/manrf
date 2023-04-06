@@ -5,9 +5,9 @@ use embedded_graphics_simulator::{
 
 use crate::{event::Event, example_components::ComponentDefinition, App, Runner};
 
-type TINR = fn(Size, &mut dyn Runner);
+type TINR<T> = fn(Size, &mut dyn Runner<T>);
 
-pub fn test_in_window<T: Default>(size: Size, comp: ComponentDefinition<T>, callback: TINR) {
+pub fn test_in_window<T: Default>(size: Size, comp: ComponentDefinition<T>, callback: TINR<T>) {
     let mut display = SimulatorDisplay::new(size);
 
     let mut app = App::new(comp);
