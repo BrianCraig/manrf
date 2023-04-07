@@ -1,0 +1,1 @@
+ - Create `Style` component, that can have `Alignment`, `Margin`, `Border`, `Background` and `Padding`. 
