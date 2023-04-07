@@ -31,10 +31,11 @@ impl<T> ComponentDefinition<T> {
         self.events_listener = Some(events_listener);
     }
 
-    pub fn run_event_listener(&self, store: &mut T, event: Event) {
+    pub fn run_event_listener(&self, store: &mut T, event: Event) -> bool{
         if let Some(events_listener) = self.events_listener {
             events_listener(store, event);
         }
+        false
     }
 }
 

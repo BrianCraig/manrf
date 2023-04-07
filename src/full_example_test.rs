@@ -56,7 +56,7 @@ fn create_keys_app() {
         }
     }
 
-    let main_menu: ComponentDefinition<AppState> = ComponentDefinition::new(|_state| {
+    let main_menu: ComponentDefinition<AppState> = ComponentDefinition::new(|state| {
         let item_selector: std::rc::Rc<ItemSelector<AppState, Key>> = ItemSelector::new(
             |state| &state.keys,
             |state| state.keys_selected_state.clone(),
@@ -73,10 +73,10 @@ fn create_keys_app() {
         Stack::col(vec![
             Border::bottom(
                 1,
-                into565(&PALETTE1, 0),
+                into565(&PALETTE3, 0),
                 crate::Box::exactly(
                     Size::new(128, 16),
-                    into565(&PALETTE1, 1),
+                    into565(&PALETTE4, state.keys_selected_state.active as u8),
                     Some(Text::new("Main Menu")),
                 ),
             ) as Element<AppState>,

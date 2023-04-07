@@ -1,16 +1,8 @@
 #![feature(fn_traits)]
 
-use constraints::Constraints;
-use data_binding::GlobalStore;
-use embedded_graphics::draw_target::DrawTarget;
-use embedded_graphics::geometry::Size;
+use crate::utils::*;
 use embedded_graphics::mono_font::{ascii::FONT_6X10, MonoTextStyle};
-use embedded_graphics::pixelcolor::Rgb565;
-use embedded_graphics::prelude::{Point, RgbColor};
-use embedded_graphics::primitives::Rectangle;
-use embedded_graphics::Drawable;
 use embedded_graphics_simulator::SimulatorDisplay;
-use event::{Button, Direction, Event};
 use example_components::ComponentDefinition;
 
 use std::rc::Rc;
@@ -24,6 +16,9 @@ mod full_example_test;
 mod lol;
 mod render_tree;
 mod testing_helpers;
+mod utils;
+mod elements;
+mod defs;
 
 use render_tree::RenderNode;
 
@@ -362,14 +357,14 @@ impl<S, T> ElementTrait<S> for ItemSelector<S, T> {
             let active = index == element_state.active;
             let render = (self.render_item)(item, active);
             let child = render.render(constraints, state);
-            size.width = size.width.max(child.0.width);
-            size.height += child.0.height;
             children.push(RenderNode::SingleChild {
                 offset: Point::new(0, size.height as i32),
                 size: child.0,
                 renderer: render,
                 child: std::boxed::Box::new(child.1),
             });
+            size.width = size.width.max(child.0.width);
+            size.height += child.0.height;
         }
         (
             size,
@@ -414,7 +409,7 @@ type Draw565 = SimulatorDisplay<Rgb565>;
 pub trait Runner<S> {
     fn to_string(&mut self) -> String;
     fn render(&mut self, size: Size) -> RenderNode<S>;
-    fn paint(&mut self, node: RenderNode<S>, target: &mut Draw565, offset: Point);
+    fn paint(&mut self, node: &RenderNode<S>, target: &mut Draw565, offset: Point);
 }
 
 pub struct App<T>
@@ -436,8 +431,37 @@ where
         }
     }
 
-    fn handle_event(&mut self, event: event::Event) {
-        self.root.run_event_listener(&mut self.state, event);
+    fn handle_event(&mut self, event: event::Event, render_root: &RenderNode<T>) {
+        if self.root.run_event_listener(&mut self.state, event.clone()) {
+            return;
+        }
+        if !self.handle_event_recursive(event.clone(), render_root){
+            println!("Unhandled event: {:?}", event);
+        }
+    }
+
+    fn handle_event_recursive(&mut self, event: event::Event, render_root: &RenderNode<T>) -> bool {
+        match render_root {
+            RenderNode::SingleChild {
+                offset: _,
+                size: _,
+                renderer,
+                child,
+            } => {
+                if renderer.event_handler(&mut self.state, event.clone()) {
+                    return true;
+                }
+                self.handle_event_recursive(event, child)
+            }
+            RenderNode::MultiChild {
+                offset: _,
+                size: _,
+                child,
+            } => {
+                child.iter().any(|c| self.handle_event_recursive(event.clone(), c))
+            },
+            RenderNode::Leaf => {false}
+        }
     }
 }
 
@@ -456,7 +480,7 @@ where
             .1
     }
 
-    fn paint(&mut self, node: RenderNode<T>, target: &mut Draw565, origin_offset: Point) {
+    fn paint(&mut self, node: &RenderNode<T>, target: &mut Draw565, origin_offset: Point) {
         match node {
             RenderNode::SingleChild {
                 offset,
@@ -464,16 +488,16 @@ where
                 renderer,
                 child,
             } => {
-                let new_offset = origin_offset + offset;
+                let new_offset = origin_offset + offset.clone();
                 renderer.paint(new_offset, target);
-                self.paint(*child, target, new_offset);
+                self.paint(child, target, new_offset);
             }
             RenderNode::MultiChild {
                 offset,
                 size: _,
                 child,
             } => {
-                let new_offset = origin_offset + offset;
+                let new_offset = origin_offset + offset.clone();
                 for item in child {
                     self.paint(item, target, new_offset);
                 }

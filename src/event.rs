@@ -2,18 +2,24 @@ use embedded_graphics_simulator::{
     sdl2::{Keycode, MouseButton},
     SimulatorEvent,
 };
+
+#[derive(Clone, Debug)]
 pub enum Direction {
     Up,
     Down,
     Left,
     Right,
 }
+
+#[derive(Clone, Debug)]
 pub enum Button {
     Principal,
     Secondary,
     Back,
 }
 
+
+#[derive(Clone, Debug)]
 pub enum Event {
     DirectionPressed(Direction),
     ButtonPressed(Button),

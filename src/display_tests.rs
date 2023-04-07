@@ -5,14 +5,11 @@ use crate::{Padding, Runner};
 
 use super::{App, Box, Stack, Text};
 
-
 use embedded_graphics::pixelcolor::raw::RawU16;
 use embedded_graphics::prelude::{Point, RgbColor};
 use embedded_graphics::{geometry::Size, pixelcolor::Rgb565};
 
-use embedded_graphics_simulator::{
-    OutputSettingsBuilder, SimulatorDisplay, Window,
-};
+use embedded_graphics_simulator::{OutputSettingsBuilder, SimulatorDisplay, Window};
 
 static palette: [u16; 16] = [
     0x0000_u16, 0x001F_u16, 0x03E0_u16, 0x7C00_u16, 0x7BE0_u16, 0xF800_u16, 0xFD20_u16, 0xFE00_u16,
@@ -21,7 +18,7 @@ static palette: [u16; 16] = [
 
 #[test]
 fn create_canvas() {
-    let comp:ComponentDefinition<()> = ComponentDefinition::new(|_state| {
+    let comp: ComponentDefinition<()> = ComponentDefinition::new(|_state| {
         let size_8 = Size {
             width: 8,
             height: 8,
@@ -48,7 +45,7 @@ fn create_canvas() {
 
     let a = app.render(Size::new(30, 30));
 
-    app.paint(a, &mut display, Point::default());
+    app.paint(&a, &mut display, Point::default());
 
     // window.show_static(&display);
 }
@@ -56,7 +53,7 @@ fn create_canvas() {
 #[test]
 fn create_canvas_2() {
     let size = Size::new(80, 80);
-    let comp:ComponentDefinition<()> = ComponentDefinition::new(|_state| {
+    let comp: ComponentDefinition<()> = ComponentDefinition::new(|_state| {
         let size_8 = Size {
             width: 8,
             height: 8,
@@ -83,7 +80,7 @@ fn create_canvas_2() {
 
     let a = app.render(size);
 
-    app.paint(a,  &mut display, Point::default());
+    app.paint(&a, &mut display, Point::default());
 
     // window.show_static(&display);
 }
@@ -92,7 +89,7 @@ fn create_canvas_2() {
 fn mutate_component() {
     let size = Size::new(80, 80);
 
-    let comp:ComponentDefinition<()>= ComponentDefinition::new(|_state| {
+    let comp: ComponentDefinition<()> = ComponentDefinition::new(|_state| {
         let size_8 = Size {
             width: 8,
             height: 8,
@@ -120,5 +117,5 @@ fn mutate_component() {
 
     let a = app.render(size);
 
-    app.paint(a, &mut display, Point::default());
+    app.paint(&a, &mut display, Point::default());
 }
