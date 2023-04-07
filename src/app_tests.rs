@@ -1,8 +1,7 @@
-use crate::{Runner, example_components::ComponentDefinition};
-
+use crate::defs::*;
+use crate::utils::*;
+use crate::component::ComponentDefinition;
 use super::{App, Box,  Stack};
-
-use embedded_graphics::{geometry::Size, pixelcolor::Rgb565, prelude::RgbColor};
 
 #[test]
 fn create_canvas() {
@@ -18,7 +17,7 @@ fn create_canvas() {
         ])
     });
 
-    let mut app = App::new(comp);
+    let mut app: App<()> = App::new(comp);
 
     app.render(Size::new(64, 64));
 }

@@ -1,15 +1,6 @@
+use crate::utils::*;
+use crate::defs::*;
 
-
-use embedded_graphics::prelude::Size;
-
-use crate::{
-    event::{Event, Button},
-    Element, testing_helpers::test_in_window, Number,
-};
-
-type EventFunction<T> = fn(&mut T, Event) -> bool;
-
-type ComponentGenerator<T> = fn(&mut T) -> Element<T>;
 pub struct ComponentDefinition<T> {
     generator: ComponentGenerator<T>,
     events_listener: Option<EventFunction<T>>,
@@ -41,6 +32,8 @@ impl<T> ComponentDefinition<T> {
 
 #[test]
 fn component_definition() {
+    use crate::Number;
+
     #[derive(Default, Clone)]
     pub struct AppState {
         counter: i32,
@@ -85,7 +78,7 @@ fn component_list_selector_event() {
     let mut state = AppState::default();
     let mut component: ComponentDefinition<AppState> = ComponentDefinition::new(|state| {
         crate::Stack::col(vec![
-            crate::Text::new("Select an element"),
+            crate::Text::new("Select an element".to_string()),
             crate::ListSelector::new(
                 state
                     .elements
@@ -129,6 +122,7 @@ fn component_list_selector_event() {
 #[ignore]
 #[test]
 fn component_list_selector_manual() {
+    use crate::testing_helpers::test_in_window;
     #[derive(Clone)]
     pub struct AppState {
         elements: Vec<i32>,
@@ -146,7 +140,7 @@ fn component_list_selector_manual() {
 
     let mut component:ComponentDefinition<AppState> = ComponentDefinition::new(|state| {
         crate::Stack::col(vec![
-            crate::Text::new("selector"),
+            crate::Text::new("selector".to_string()),
             crate::ListSelector::new(
                 state
                     .elements
@@ -167,5 +161,5 @@ fn component_list_selector_manual() {
         _ => false,
     });
 
-    test_in_window(Size::new(128, 128), component, |_, _| ());
+    test_in_window::<AppState>(Size::new(128, 128), component, |_, _| ());
 }

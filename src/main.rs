@@ -1,41 +1,21 @@
 #![feature(fn_traits)]
 
-use crate::utils::*;
+use component::ComponentDefinition;
+use utils::*;
+use defs::*;
 use embedded_graphics::mono_font::{ascii::FONT_6X10, MonoTextStyle};
-use embedded_graphics_simulator::SimulatorDisplay;
-use example_components::ComponentDefinition;
 
-use std::rc::Rc;
-
-mod constraints;
-mod data_binding;
 pub mod event;
 mod event_from_simulator;
-mod example_components;
+mod component;
 mod full_example_test;
-mod lol;
-mod render_tree;
 mod testing_helpers;
 mod utils;
 mod elements;
 mod defs;
-
-use render_tree::RenderNode;
+pub mod palette;
 
 fn main() {}
-
-pub trait ElementTrait<S> {
-    fn to_string(&self) -> String {
-        todo!()
-    }
-    fn render(&self, constraints: constraints::Constraints, state: &S) -> (Size, RenderNode<S>);
-    fn paint(&self, _pos: Point, _display: &mut Draw565) {}
-    fn event_handler(&self, state: &mut S, event: Event) -> bool {
-        false
-    }
-}
-
-type Element<S> = Rc<dyn ElementTrait<S>>;
 
 pub struct ListSelector<S> {
     items: Vec<Element<S>>,
@@ -53,7 +33,7 @@ impl<S> ElementTrait<S> for ListSelector<S> {
         self.items[self.selected].to_string()
     }
 
-    fn render(&self, constraints: constraints::Constraints, state: &S) -> (Size, RenderNode<S>) {
+    fn render(&self, constraints: Constraints, state: &S) -> (Size, RenderNode<S>) {
         let (size, render_node) = self.items[self.selected].render(constraints, state);
         (
             size,
@@ -92,7 +72,7 @@ impl<S> ElementTrait<S> for Stack<S> {
         format!("[{}]", coll)
     }
 
-    fn render(&self, constraints: constraints::Constraints, state: &S) -> (Size, RenderNode<S>) {
+    fn render(&self, constraints: Constraints, state: &S) -> (Size, RenderNode<S>) {
         // we keep the constraints from the parent;
 
         let mut sum = 0_u32;
@@ -148,13 +128,13 @@ impl<S> Box<S> {
 }
 
 impl<S> ElementTrait<S> for Box<S> {
-    fn render(&self, constraints: constraints::Constraints, state: &S) -> (Size, RenderNode<S>) {
+    fn render(&self, _constraints: Constraints, state: &S) -> (Size, RenderNode<S>) {
         (
             self.size,
             match &self.child {
                 Some(child) => {
                     let (size, render_node) = child.render(
-                        constraints::Constraints {
+                        Constraints {
                             min: self.size,
                             max: self.size,
                         },
@@ -195,9 +175,9 @@ impl<S> Padding<S> {
 }
 
 impl<S> ElementTrait<S> for Padding<S> {
-    fn render(&self, constraints: constraints::Constraints, state: &S) -> (Size, RenderNode<S>) {
+    fn render(&self, constraints: Constraints, state: &S) -> (Size, RenderNode<S>) {
         let double_padding = self.padding * 2;
-        let child_constraints = constraints::Constraints {
+        let child_constraints = Constraints {
             min: constraints.min + double_padding,
             max: constraints.max - double_padding,
         };
@@ -218,11 +198,11 @@ impl<S> ElementTrait<S> for Padding<S> {
 }
 
 pub struct Text {
-    val: &'static str,
+    val: String,
 }
 
 impl Text {
-    pub fn new(val: &'static str) -> Rc<Self> {
+    pub fn new(val: String) -> Rc<Self> {
         Rc::new(Self { val })
     }
 }
@@ -232,7 +212,7 @@ impl<S> ElementTrait<S> for Text {
         self.val.to_string()
     }
 
-    fn render(&self, _constraints: constraints::Constraints, _state: &S) -> (Size, RenderNode<S>) {
+    fn render(&self, _constraints: Constraints, _state: &S) -> (Size, RenderNode<S>) {
         (Size::new(50, 10), RenderNode::Leaf)
     }
 
@@ -241,7 +221,7 @@ impl<S> ElementTrait<S> for Text {
         small_style.underline_color = embedded_graphics::text::DecorationColor::Custom(Rgb565::RED);
         small_style.background_color = Some(Rgb565::GREEN);
         let _ = embedded_graphics::text::Text::new(
-            self.val,
+            self.val.as_str(),
             pos + Point::new(0, small_style.font.baseline as i32),
             small_style,
         )
@@ -264,7 +244,7 @@ impl<S> ElementTrait<S> for Number {
         self.val.to_string()
     }
 
-    fn render(&self, _constraints: constraints::Constraints, _state: &S) -> (Size, RenderNode<S>) {
+    fn render(&self, _constraints: Constraints, _state: &S) -> (Size, RenderNode<S>) {
         (Size::new(50, 10), RenderNode::Leaf)
     }
 
@@ -294,7 +274,7 @@ impl<S> Border<S> {
 }
 
 impl<S> ElementTrait<S> for Border<S> {
-    fn render(&self, constraints: constraints::Constraints, state: &S) -> (Size, RenderNode<S>) {
+    fn render(&self, constraints: Constraints, state: &S) -> (Size, RenderNode<S>) {
         let child = self.child.render(constraints, state);
         let this_size = child.0 + Size::new(0, self.size as u32);
         (
@@ -348,7 +328,7 @@ impl<S, T> ItemSelector<S, T> {
 }
 
 impl<S, T> ElementTrait<S> for ItemSelector<S, T> {
-    fn render(&self, constraints: constraints::Constraints, state: &S) -> (Size, RenderNode<S>) {
+    fn render(&self, constraints: Constraints, state: &S) -> (Size, RenderNode<S>) {
         let mut size = Size::new(0, 0);
         let mut children = Vec::new();
         let items = (self.items_lookup)(state);
@@ -404,14 +384,6 @@ impl<S, T> ElementTrait<S> for ItemSelector<S, T> {
     }
 }
 
-type Draw565 = SimulatorDisplay<Rgb565>;
-
-pub trait Runner<S> {
-    fn to_string(&mut self) -> String;
-    fn render(&mut self, size: Size) -> RenderNode<S>;
-    fn paint(&mut self, node: &RenderNode<S>, target: &mut Draw565, offset: Point);
-}
-
 pub struct App<T>
 where
     T: Default,
@@ -431,7 +403,7 @@ where
         }
     }
 
-    fn handle_event(&mut self, event: event::Event, render_root: &RenderNode<T>) {
+    pub fn handle_event(&mut self, event: event::Event, render_root: &RenderNode<T>) {
         if self.root.run_event_listener(&mut self.state, event.clone()) {
             return;
         }
@@ -476,7 +448,7 @@ where
     fn render(&mut self, size: Size) -> RenderNode<T> {
         self.root
             .render(&mut self.state)
-            .render(constraints::Constraints::up_to(size), &self.state)
+            .render(Constraints::up_to(size), &self.state)
             .1
     }
 

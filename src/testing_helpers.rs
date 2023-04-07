@@ -1,20 +1,22 @@
 use std::time::SystemTime;
 
-use crate::utils::{Point, Size};
+use crate::utils::*;
+use crate::defs::*;
 use embedded_graphics_simulator::{
     OutputSettingsBuilder, SimulatorDisplay, SimulatorEvent, Window,
 };
 
-use crate::{event::Event, example_components::ComponentDefinition, App, Runner};
+use crate::{ component::ComponentDefinition, App};
 
 type TINR<T> = fn(Size, &mut dyn Runner<T>);
 
+#[allow(dead_code)]
 pub fn test_in_window<T: Default>(size: Size, comp: ComponentDefinition<T>, callback: TINR<T>) {
     let mut display = SimulatorDisplay::new(size);
 
     let mut app = App::new(comp);
 
-    let mut framesCounter = (SystemTime::now(), 0);
+    let mut frames_counter = (SystemTime::now(), 0);
 
     let output_settings = OutputSettingsBuilder::new()
         .max_fps(60)
@@ -29,10 +31,10 @@ pub fn test_in_window<T: Default>(size: Size, comp: ComponentDefinition<T>, call
         app.paint(&nodes, &mut display, Point::default());
         window.update(&display);
 
-        framesCounter.1 += 1;
-        if framesCounter.0.elapsed().unwrap().as_secs() >= 1 {
-            println!("FPS: {}", framesCounter.1);
-            framesCounter = (SystemTime::now(), 0);
+        frames_counter.1 += 1;
+        if frames_counter.0.elapsed().unwrap().as_secs() >= 1 {
+            println!("FPS: {}", frames_counter.1);
+            frames_counter = (SystemTime::now(), 0);
         }
         
         for event in window.events() {
