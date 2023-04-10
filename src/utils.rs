@@ -1,4 +1,5 @@
 mod constraints;
+mod edge_insets;
 
 pub use std::rc::Rc;
 
@@ -11,3 +12,4 @@ pub use embedded_graphics::Drawable;
 pub use crate::event::{Button, Direction, Event};
 
 pub use crate::utils::constraints::Constraints;
+pub use crate::utils::edge_insets::EdgeInsets;

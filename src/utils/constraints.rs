@@ -7,13 +7,23 @@ pub struct Constraints {
 }
 
 impl Constraints {
-    pub fn up_to(size: Size) -> Self {
+    pub const fn up_to(size: Size) -> Self {
         Constraints {
             min: Size {
                 width: 0,
                 height: 0,
             },
             max: size,
+        }
+    }
+
+    pub const fn shrink(self, size: &Size) -> Self {
+        Constraints {
+            min: Size {
+                width: self.min.width.saturating_add(size.width),
+                height: self.min.height.saturating_add(size.height),
+            },
+            max: self.max,
         }
     }
 }

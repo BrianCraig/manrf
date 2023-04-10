@@ -6,7 +6,6 @@ use defs::*;
 use embedded_graphics::mono_font::{ascii::FONT_6X10, MonoTextStyle};
 
 pub mod event;
-mod event_from_simulator;
 mod component;
 mod full_example_test;
 mod testing_helpers;
@@ -46,8 +45,8 @@ impl<S> ElementTrait<S> for ListSelector<S> {
         )
     }
 
-    fn paint(&self, pos: Point, display: &mut Draw565) {
-        self.items[self.selected].paint(pos, display)
+    fn paint(&self, size: Size, pos: Point, display: &mut Draw565) {
+        self.items[self.selected].paint(size, pos, display)
     }
 }
 
@@ -152,7 +151,7 @@ impl<S> ElementTrait<S> for Box<S> {
         )
     }
 
-    fn paint(&self, pos: Point, display: &mut Draw565) {
+    fn paint(&self, _size: Size, pos: Point, display: &mut Draw565) {
         let _ = display.fill_solid(
             &Rectangle {
                 top_left: pos,
@@ -213,10 +212,10 @@ impl<S> ElementTrait<S> for Text {
     }
 
     fn render(&self, _constraints: Constraints, _state: &S) -> (Size, RenderNode<S>) {
-        (Size::new(50, 10), RenderNode::Leaf)
+        (Size::new(self.val.len() as u32 * 6, 10), RenderNode::Leaf)
     }
 
-    fn paint(&self, pos: Point, display: &mut Draw565) {
+    fn paint(&self, _size: Size, pos: Point, display: &mut Draw565) {
         let mut small_style = MonoTextStyle::new(&FONT_6X10, Rgb565::WHITE);
         small_style.underline_color = embedded_graphics::text::DecorationColor::Custom(Rgb565::RED);
         small_style.background_color = Some(Rgb565::GREEN);
@@ -248,7 +247,7 @@ impl<S> ElementTrait<S> for Number {
         (Size::new(50, 10), RenderNode::Leaf)
     }
 
-    fn paint(&self, pos: Point, display: &mut Draw565) {
+    fn paint(&self, _size: Size, pos: Point, display: &mut Draw565) {
         let mut small_style = MonoTextStyle::new(&FONT_6X10, Rgb565::WHITE);
         small_style.underline_color = embedded_graphics::text::DecorationColor::Custom(Rgb565::RED);
         small_style.background_color = Some(Rgb565::GREEN);
@@ -288,7 +287,7 @@ impl<S> ElementTrait<S> for Border<S> {
         )
     }
 
-    fn paint(&self, pos: Point, display: &mut Draw565) {
+    fn paint(&self, _size: Size, pos: Point, display: &mut Draw565) {
         let _ = display.fill_solid(
             &Rectangle {
                 top_left: pos,
@@ -456,12 +455,12 @@ where
         match node {
             RenderNode::SingleChild {
                 offset,
-                size: _,
+                size,
                 renderer,
                 child,
             } => {
                 let new_offset = origin_offset + offset.clone();
-                renderer.paint(new_offset, target);
+                renderer.paint(*size, new_offset, target);
                 self.paint(child, target, new_offset);
             }
             RenderNode::MultiChild {

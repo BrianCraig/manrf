@@ -7,7 +7,7 @@ pub trait ElementTrait<S> {
         todo!()
     }
     fn render(&self, constraints: Constraints, state: &S) -> (Size, RenderNode<S>);
-    fn paint(&self, _pos: Point, _display: &mut Draw565) {}
+    fn paint(&self, _size: Size, _pos: Point, _display: &mut Draw565) {}
     fn event_handler(&self, _state: &mut S, _event: Event) -> bool {
         false
     }
