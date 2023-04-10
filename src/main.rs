@@ -162,40 +162,6 @@ impl<S> ElementTrait<S> for Box<S> {
     }
 }
 
-pub struct Padding<S> {
-    padding: Size,
-    child: Element<S>,
-}
-
-impl<S> Padding<S> {
-    pub fn new(padding: Size, child: Element<S>) -> Rc<Self> {
-        Rc::new(Self { padding, child })
-    }
-}
-
-impl<S> ElementTrait<S> for Padding<S> {
-    fn render(&self, constraints: Constraints, state: &S) -> (Size, RenderNode<S>) {
-        let double_padding = self.padding * 2;
-        let child_constraints = Constraints {
-            min: constraints.min + double_padding,
-            max: constraints.max - double_padding,
-        };
-        let child = self.child.render(child_constraints, state);
-
-        let offset = Point::new(self.padding.width as i32, self.padding.height as i32);
-        let this_size = child.0 + double_padding;
-        (
-            this_size,
-            RenderNode::SingleChild {
-                offset,
-                size: child.0,
-                renderer: self.child.clone(),
-                child: std::boxed::Box::new(child.1),
-            },
-        )
-    }
-}
-
 pub struct Text {
     val: String,
 }
@@ -257,44 +223,6 @@ impl<S> ElementTrait<S> for Number {
             small_style,
         )
         .draw(display);
-    }
-}
-
-pub struct Border<S> {
-    color: Rgb565,
-    child: Element<S>,
-    size: u8,
-}
-
-impl<S> Border<S> {
-    pub fn bottom(size: u8, color: Rgb565, child: Element<S>) -> Rc<Self> {
-        Rc::new(Self { color, child, size })
-    }
-}
-
-impl<S> ElementTrait<S> for Border<S> {
-    fn render(&self, constraints: Constraints, state: &S) -> (Size, RenderNode<S>) {
-        let child = self.child.render(constraints, state);
-        let this_size = child.0 + Size::new(0, self.size as u32);
-        (
-            this_size,
-            RenderNode::SingleChild {
-                offset: Point::new(0, self.size as i32),
-                size: child.0,
-                renderer: self.child.clone(),
-                child: std::boxed::Box::new(child.1),
-            },
-        )
-    }
-
-    fn paint(&self, _size: Size, pos: Point, display: &mut Draw565) {
-        let _ = display.fill_solid(
-            &Rectangle {
-                top_left: pos,
-                size: Size::new(100, self.size as u32),
-            },
-            self.color,
-        );
     }
 }
 

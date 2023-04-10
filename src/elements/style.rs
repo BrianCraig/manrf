@@ -58,6 +58,42 @@ impl<S> Style<S> {
         Rc::new(Self { style, child })
     }
 
+    pub fn new_with_border(border: Border, child: Option<Element<S>>) -> Rc<Self> {
+        Rc::new(Self {
+            style: StyleDefinition {
+                background: None,
+                margin: EdgeInsets::all(0),
+                border,
+                padding: EdgeInsets::all(0),
+            },
+            child,
+        })
+    }
+
+    pub fn new_with_padding(padding: EdgeInsets, child: Option<Element<S>>) -> Rc<Self> {
+        Rc::new(Self {
+            style: StyleDefinition {
+                background: None,
+                margin: EdgeInsets::all(0),
+                border: Border::none(),
+                padding,
+            },
+            child,
+        })
+    }
+
+    pub fn new_with_background(background: Rgb888, child: Option<Element<S>>) -> Rc<Self> {
+        Rc::new(Self {
+            style: StyleDefinition {
+                background: Some(background),
+                margin: EdgeInsets::all(0),
+                border: Border::none(),
+                padding: EdgeInsets::all(0),
+            },
+            child,
+        })
+    }
+
     fn added_size(&self) -> Size {
         self.style.margin.size() + self.style.border.size.size() + self.style.padding.size()
     }

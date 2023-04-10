@@ -4,7 +4,7 @@ use crate::palette::PALETTE_DREAM;
 #[test]
 fn create_keys_app() {
     use crate::defs::*;
-    use crate::elements::{Style, Border, StyleDefinition};
+    use crate::elements::{Border, Style, StyleDefinition};
     use crate::utils::*;
 
     use crate::{ItemSelector, ItemSelectorState};
@@ -30,8 +30,7 @@ fn create_keys_app() {
     }
 
     use crate::{
-        component::ComponentDefinition, testing_helpers::test_in_window, Element, Stack,
-        Text,
+        component::ComponentDefinition, testing_helpers::test_in_window, Element, Stack, Text,
     };
 
     #[derive(Clone)]
@@ -74,21 +73,26 @@ fn create_keys_app() {
             |state, new_state| state.keys_selected_state = new_state,
             |key: &Key, selected: bool| {
                 Style::new_with_style(
-                    bordered_style,
+                    StyleDefinition {
+                        background: if selected {
+                            Some(PALETTE_DREAM.light)
+                        } else {
+                            Some(PALETTE_DREAM.darkest)
+                        },
+                        ..bordered_style
+                    },
                     Some(Text::new(format!("Key: {} {}", key.text, key.key))),
                 )
             },
         );
 
         Stack::col(vec![
-            crate::Border::bottom(
-                1,
-                into565(&PALETTE3, 0),
-                crate::Box::exactly(
-                    Size::new(128, 16),
-                    into565(&PALETTE4, state.keys_selected_state.active as u8),
-                    Some(Text::new("Main Menu".to_string())),
-                ),
+            Style::new_with_border(
+                Border {
+                    color: PALETTE_DREAM.darkest,
+                    size: EdgeInsets::all(2),
+                },
+                Some(Text::new("Main Menu".to_string())),
             ) as Element<AppState>,
             item_selector as Element<AppState>,
         ])
