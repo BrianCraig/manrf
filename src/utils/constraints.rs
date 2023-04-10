@@ -26,4 +26,11 @@ impl Constraints {
             max: self.max,
         }
     }
+
+    pub fn clamp(&self, size: &Size) -> Size {
+        Size {
+            width: size.width.max(self.min.width).min(self.max.width),
+            height: size.height.max(self.min.height).min(self.max.height),
+        }
+    }
 }

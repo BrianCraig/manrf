@@ -101,6 +101,7 @@ impl<S> ElementTrait<S> for Stack<S> {
             width: max_cross,
             height: sum,
         };
+        let size = constraints.clamp(&size);
         let offset = (constraints.max - size) / 2;
         let offset = Point::new(offset.width as i32, offset.height as i32);
         (
