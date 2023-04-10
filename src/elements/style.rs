@@ -32,7 +32,7 @@ pub struct StyleDefinition {
 
 pub struct Style<S> {
     style: StyleDefinition,
-    child: Option<Element<S>>,
+    child: Element<S>,
 }
 
 impl<S> Style<S> {
@@ -41,7 +41,7 @@ impl<S> Style<S> {
         margin: EdgeInsets,
         border: BorderDefinition,
         padding: EdgeInsets,
-        child: Option<Element<S>>,
+        child: Element<S>,
     ) -> Rc<Self> {
         Rc::new(Self {
             style: StyleDefinition {
@@ -54,11 +54,11 @@ impl<S> Style<S> {
         })
     }
 
-    pub fn new_with_style(style: StyleDefinition, child: Option<Element<S>>) -> Rc<Self> {
+    pub fn new_with_style(style: StyleDefinition, child: Element<S>) -> Rc<Self> {
         Rc::new(Self { style, child })
     }
 
-    pub fn new_with_background(background: Rgb888, child: Option<Element<S>>) -> Rc<Self> {
+    pub fn new_with_background(background: Rgb888, child: Element<S>) -> Rc<Self> {
         Rc::new(Self {
             style: StyleDefinition {
                 background: Some(background),
@@ -106,21 +106,16 @@ impl<S> ElementTrait<S> for Style<S> {
         let added_size = self.added_size();
         let constraints = _constraints.shrink(&added_size);
 
-        match &self.child {
-            Some(child) => {
-                let (size, render_node) = child.render(constraints, state);
-                (
-                    size + added_size,
-                    RenderNode::SingleChild {
-                        offset: self.child_offset(),
-                        child: std::boxed::Box::new(render_node),
-                        renderer: child.clone(),
-                        size,
-                    },
-                )
-            }
-            None => (added_size, RenderNode::Leaf),
-        }
+        let (size, render_node) = self.child.render(constraints, state);
+        (
+            size + added_size,
+            RenderNode::SingleChild {
+                offset: self.child_offset(),
+                child: std::boxed::Box::new(render_node),
+                renderer: self.child.clone(),
+                size,
+            },
+        )
     }
 
     #[allow(unused_must_use)]
@@ -146,7 +141,8 @@ impl<S> ElementTrait<S> for Style<S> {
                     self.border_offset()
                         + pos
                         + Point::new(
-                            self.border_size(size).width as i32 - self.style.border.size.right as i32,
+                            self.border_size(size).width as i32
+                                - self.style.border.size.right as i32,
                             0,
                         ),
                     Size::new(self.style.border.size.right, self.border_size(size).height),
@@ -168,7 +164,8 @@ impl<S> ElementTrait<S> for Style<S> {
                         + pos
                         + Point::new(
                             0,
-                            self.border_size(size).height as i32 - self.style.border.size.bottom as i32,
+                            self.border_size(size).height as i32
+                                - self.style.border.size.bottom as i32,
                         ),
                     Size::new(self.border_size(size).width, self.style.border.size.bottom),
                 ),

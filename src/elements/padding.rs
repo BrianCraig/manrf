@@ -11,7 +11,7 @@ impl Padding {
             EdgeInsets::all(0),
             BorderDefinition::none(),
             padding,
-            Some(child),
+            child,
         )
     }
 }

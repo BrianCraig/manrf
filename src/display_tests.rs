@@ -1,5 +1,5 @@
 use crate::component::ComponentDefinition;
-use crate::elements::Style;
+use crate::elements;
 use crate::utils::EdgeInsets;
 use crate::{Runner};
 
@@ -91,7 +91,7 @@ fn mutate_component() {
 
         Stack::col(vec![
             Box::exactly(size_8, Rgb565::RED, None),
-            Style::new_with_padding(EdgeInsets::symmetric(2, 3), Some(Text::new("Hi".to_string()))),
+            elements::Padding::new(EdgeInsets::symmetric(2, 3), Text::new("Hi".to_string())),
             Box::exactly(size_8, Rgb565::BLUE, None),
             Text::new("This is some Text".to_string()),
         ])

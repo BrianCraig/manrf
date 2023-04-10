@@ -11,7 +11,7 @@ impl Border {
             EdgeInsets::all(0),
             border,
             EdgeInsets::all(0),
-            Some(child),
+            child,
         )
     }
 }

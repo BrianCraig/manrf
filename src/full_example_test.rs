@@ -82,7 +82,7 @@ fn create_keys_app() {
                         },
                         ..bordered_style
                     },
-                    Some(Text::new(format!("Key: {} {}", key.text, key.key))),
+                    Text::new(format!("Key: {} {}", key.text, key.key)),
                 )
             },
         );
