@@ -5,12 +5,12 @@ use embedded_graphics::primitives::PrimitiveStyle;
 use crate::defs::*;
 use crate::utils::*;
 
-pub struct Border {
+pub struct BorderDefinition {
     pub color: Rgb888,
     pub size: EdgeInsets,
 }
 
-impl Border {
+impl BorderDefinition {
     pub const fn new(color: Rgb888, size: EdgeInsets) -> Self {
         Self { color, size }
     }
@@ -26,7 +26,7 @@ impl Border {
 pub struct StyleDefinition {
     pub background: Option<Rgb888>,
     pub margin: EdgeInsets,
-    pub border: Border,
+    pub border: BorderDefinition,
     pub padding: EdgeInsets,
 }
 
@@ -39,7 +39,7 @@ impl<S> Style<S> {
     pub fn new(
         background: Option<Rgb888>,
         margin: EdgeInsets,
-        border: Border,
+        border: BorderDefinition,
         padding: EdgeInsets,
         child: Option<Element<S>>,
     ) -> Rc<Self> {
@@ -58,36 +58,12 @@ impl<S> Style<S> {
         Rc::new(Self { style, child })
     }
 
-    pub fn new_with_border(border: Border, child: Option<Element<S>>) -> Rc<Self> {
-        Rc::new(Self {
-            style: StyleDefinition {
-                background: None,
-                margin: EdgeInsets::all(0),
-                border,
-                padding: EdgeInsets::all(0),
-            },
-            child,
-        })
-    }
-
-    pub fn new_with_padding(padding: EdgeInsets, child: Option<Element<S>>) -> Rc<Self> {
-        Rc::new(Self {
-            style: StyleDefinition {
-                background: None,
-                margin: EdgeInsets::all(0),
-                border: Border::none(),
-                padding,
-            },
-            child,
-        })
-    }
-
     pub fn new_with_background(background: Rgb888, child: Option<Element<S>>) -> Rc<Self> {
         Rc::new(Self {
             style: StyleDefinition {
                 background: Some(background),
                 margin: EdgeInsets::all(0),
-                border: Border::none(),
+                border: BorderDefinition::none(),
                 padding: EdgeInsets::all(0),
             },
             child,
