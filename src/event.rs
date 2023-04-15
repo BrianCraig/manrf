@@ -27,6 +27,7 @@ pub enum Event {
 
 impl TryFrom<SimulatorEvent> for Event {
     type Error = ();
+
     fn try_from(event: SimulatorEvent) -> Result<Self, Self::Error> {
         match event {
             SimulatorEvent::MouseButtonDown { mouse_btn, .. } => match mouse_btn {

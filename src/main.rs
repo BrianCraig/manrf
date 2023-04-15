@@ -1,18 +1,18 @@
 #![feature(fn_traits)]
 
 use component::ComponentDefinition;
-use utils::*;
 use defs::*;
 use embedded_graphics::mono_font::{ascii::FONT_6X10, MonoTextStyle};
+use utils::*;
 
-pub mod event;
 mod component;
+mod defs;
+mod elements;
+pub mod event;
 mod full_example_test;
+pub mod palette;
 mod testing_helpers;
 mod utils;
-mod elements;
-mod defs;
-pub mod palette;
 
 fn main() {}
 
@@ -178,8 +178,11 @@ impl<S> ElementTrait<S> for Text {
         self.val.to_string()
     }
 
-    fn render(&self, _constraints: Constraints, _state: &S) -> (Size, RenderNode<S>) {
-        (Size::new(self.val.len() as u32 * 6, 10), RenderNode::Leaf)
+    fn render(&self, constraints: Constraints, _state: &S) -> (Size, RenderNode<S>) {
+        (
+            constraints.clamp(&Size::new(self.val.len() as u32 * 6, 10)),
+            RenderNode::Leaf,
+        )
     }
 
     fn paint(&self, _size: Size, pos: Point, display: &mut Draw565) {
@@ -335,7 +338,7 @@ where
         if self.root.run_event_listener(&mut self.state, event.clone()) {
             return;
         }
-        if !self.handle_event_recursive(event.clone(), render_root){
+        if !self.handle_event_recursive(event.clone(), render_root) {
             println!("Unhandled event: {:?}", event);
         }
     }
@@ -357,10 +360,10 @@ where
                 offset: _,
                 size: _,
                 child,
-            } => {
-                child.iter().any(|c| self.handle_event_recursive(event.clone(), c))
-            },
-            RenderNode::Leaf => {false}
+            } => child
+                .iter()
+                .any(|c| self.handle_event_recursive(event.clone(), c)),
+            RenderNode::Leaf => false,
         }
     }
 }
