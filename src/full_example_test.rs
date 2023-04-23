@@ -120,20 +120,23 @@ static MAIN_MENU: ComponentGenerator<AppState> = |state| {
         false => ITEM_SELECTOR_VIEW,
     };
 
-    Stack::col(vec![
-        elements::border(
-            BorderDefinition {
-                color: PALETTE_DREAM.darkest,
-                size: EdgeInsets::all(2),
-            },
-            Text::new(if is_selected {
-                "Selected".to_string()
-            } else {
-                "Not selected".to_string()
-            }),
-        ) as Element<AppState>,
-        elements::Component::new(actual_view) as Element<AppState>,
-    ])
+    elements::background(
+        PALETTE_DREAM.darkest,
+        Stack::col(vec![
+            elements::border(
+                BorderDefinition {
+                    color: PALETTE_DREAM.darkest,
+                    size: EdgeInsets::all(2),
+                },
+                Text::new(if is_selected {
+                    "Selected".to_string()
+                } else {
+                    "Not selected".to_string()
+                }),
+            ) as Element<AppState>,
+            elements::Component::new(actual_view) as Element<AppState>,
+        ]),
+    )
 };
 
 #[ignore]
