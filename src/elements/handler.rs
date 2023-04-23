@@ -4,13 +4,13 @@ use crate::utils::*;
 pub type EventHandler<S> = fn(&mut S, Event) -> bool;
 
 pub struct Handler<S> {
-    child: Element<S>,
     handler: EventHandler<S>,
+    child: Element<S>,
 }
 
 impl<S> Handler<S> {
-    pub fn new(child: Element<S>, handler: EventHandler<S>) -> Rc<Self> {
-        Rc::new(Self { child, handler })
+    pub fn new(handler: EventHandler<S>, child: Element<S>) -> Rc<Self> {
+        Rc::new(Self { handler, child })
     }
 }
 

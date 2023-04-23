@@ -98,6 +98,7 @@ static SELECTED_VIEW: elements::Generator<AppState> = |state| {
         .unwrap_or(&Key::default())
         .clone();
     elements::Handler::new(
+        GO_BACK,
         elements::border(
             BorderDefinition {
                 color: PALETTE_DREAM.darkest,
@@ -108,7 +109,6 @@ static SELECTED_VIEW: elements::Generator<AppState> = |state| {
                 selected_key.text, selected_key.key
             )),
         ),
-        GO_BACK,
     )
 };
 
