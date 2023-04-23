@@ -9,7 +9,7 @@ pub mod component;
 pub mod defs;
 pub mod elements;
 pub mod event;
-mod full_example_test;
+
 pub mod palette;
 mod testing_helpers;
 mod utils;
@@ -414,3 +414,6 @@ where
 pub mod app_tests;
 #[cfg(test)]
 pub mod display_tests;
+
+#[cfg(test)]
+mod full_example_test;

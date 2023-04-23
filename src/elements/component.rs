@@ -1,12 +1,14 @@
 use crate::defs::*;
 use crate::utils::*;
 
+pub type Generator<S> = fn(&S) -> Element<S>;
+
 pub struct Component<S> {
-    generator: fn(&S) -> Element<S>,
+    generator: Generator<S>,
 }
 
 impl<S> Component<S> {
-    pub fn new(generator: fn(&S) -> Element<S>) -> Rc<Self> {
+    pub fn new(generator: Generator<S>) -> Rc<Self> {
         Rc::new(Self { generator })
     }
 }
