@@ -62,6 +62,15 @@ fn create_keys_app() {
         }
     }
 
+    fn go_back(state: &mut AppState, event: Event) -> bool {
+        if let Event::ButtonPressed(Button::Back) = event {
+            state.keys_selected_state.selected = None;
+            true
+        } else {
+            false
+        }
+    }
+
     let main_menu: ComponentDefinition<AppState> = ComponentDefinition::new(|state| {
         let is_selected = state.keys_selected_state.selected.is_some();
 
@@ -93,12 +102,18 @@ fn create_keys_app() {
                 .map(|index| &state.keys[index])
                 .unwrap_or(&Key::default())
                 .clone();
-            elements::border(
-                BorderDefinition {
-                    color: PALETTE_DREAM.darkest,
-                    size: EdgeInsets::all(2),
-                },
-                Text::new(format!("Selected: {} {}", selected_key.text, selected_key.key))
+            elements::Handler::new(
+                elements::border(
+                    BorderDefinition {
+                        color: PALETTE_DREAM.darkest,
+                        size: EdgeInsets::all(2),
+                    },
+                    Text::new(format!(
+                        "Selected: {} {}",
+                        selected_key.text, selected_key.key
+                    )),
+                ),
+                go_back,
             )
         };
 
