@@ -1,3 +1,4 @@
+use crate::defs::ComponentGenerator;
 use crate::elements;
 use crate::elements::{BorderDefinition, StyleDefinition};
 use crate::palette::PALETTE_DREAM;
@@ -59,16 +60,16 @@ impl Default for AppState {
     }
 }
 
-fn go_back(state: &mut AppState, event: Event) -> bool {
+static GO_BACK: elements::EventHandler<AppState> = |state, event| {
     if let Event::ButtonPressed(Button::Back) = event {
         state.keys_selected_state.selected = None;
         true
     } else {
         false
     }
-}
+};
 
-fn item_selector_view(_: &AppState) -> Element<AppState> {
+static ITEM_SELECTOR_VIEW: elements::Generator<AppState> = |_| {
     ItemSelector::<AppState, Key>::new(
         |state| &state.keys,
         |state| state.keys_selected_state.clone(),
@@ -87,9 +88,9 @@ fn item_selector_view(_: &AppState) -> Element<AppState> {
             )
         },
     )
-}
+};
 
-fn selected_view(state: &AppState) -> Element<AppState> {
+static SELECTED_VIEW: elements::Generator<AppState> = |state| {
     let selected_key: Key = state
         .keys_selected_state
         .selected
@@ -107,16 +108,16 @@ fn selected_view(state: &AppState) -> Element<AppState> {
                 selected_key.text, selected_key.key
             )),
         ),
-        go_back,
+        GO_BACK,
     )
-}
+};
 
-fn main_menu(state: &mut AppState) -> Element<AppState> {
+static MAIN_MENU: ComponentGenerator<AppState> = |state| {
     let is_selected = state.keys_selected_state.selected.is_some();
 
     let actual_view = match is_selected {
-        true => selected_view,
-        false => item_selector_view,
+        true => SELECTED_VIEW,
+        false => ITEM_SELECTOR_VIEW,
     };
 
     Stack::col(vec![
@@ -133,11 +134,11 @@ fn main_menu(state: &mut AppState) -> Element<AppState> {
         ) as Element<AppState>,
         elements::Component::new(actual_view) as Element<AppState>,
     ])
-}
+};
 
 #[ignore]
 #[test]
 fn create_keys_app() {
-    let main_menu: ComponentDefinition<AppState> = ComponentDefinition::new(main_menu);
+    let main_menu: ComponentDefinition<AppState> = ComponentDefinition::new(MAIN_MENU);
     test_in_window::<AppState>(Size::new(128, 128), main_menu, |_, _| ());
 }
