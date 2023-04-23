@@ -5,9 +5,9 @@ use defs::*;
 use embedded_graphics::mono_font::{ascii::FONT_6X10, MonoTextStyle};
 use utils::*;
 
-mod component;
-mod defs;
-mod elements;
+pub mod component;
+pub mod defs;
+pub mod elements;
 pub mod event;
 mod full_example_test;
 pub mod palette;
@@ -232,8 +232,8 @@ impl<S> ElementTrait<S> for Number {
 
 #[derive(Default, Clone)]
 pub struct ItemSelectorState {
-    active: usize,
-    selected: Option<usize>,
+    pub active: usize,
+    pub selected: Option<usize>,
 }
 pub struct ItemSelector<S, T> {
     items_lookup: fn(&S) -> &Vec<T>,

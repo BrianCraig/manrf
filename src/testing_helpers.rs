@@ -20,7 +20,7 @@ pub fn test_in_window<T: Default>(size: Size, comp: ComponentDefinition<T>, call
 
     let output_settings = OutputSettingsBuilder::new()
         .max_fps(60)
-        .pixel_spacing(1)
+        .pixel_spacing(0)
         .scale(4)
         .build();
 

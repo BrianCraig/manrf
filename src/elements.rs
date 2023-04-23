@@ -1,6 +1,8 @@
 mod style;
+mod component;
 
 pub use style::*;
+pub use component::*;
 
 use crate::{defs::Element, utils::EdgeInsets};
 

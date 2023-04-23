@@ -9,7 +9,7 @@ fn create_keys_app() {
     use crate::{ItemSelector, ItemSelectorState};
     use embedded_graphics::prelude::Size;
 
-    const bordered_style: StyleDefinition = StyleDefinition {
+    const BORDERED_STYLE: StyleDefinition = StyleDefinition {
         background: Some(PALETTE_DREAM.darkest),
         margin: EdgeInsets::symmetric(2, 4),
         border: BorderDefinition::new(PALETTE_DREAM.dark, EdgeInsets::new(1, 2, 3, 4)),
@@ -35,6 +35,15 @@ fn create_keys_app() {
         }
     }
 
+    impl Default for Key {
+        fn default() -> Self {
+            Self {
+                text: "Default".to_string(),
+                key: 0,
+            }
+        }
+    }
+
     struct AppState {
         keys: Vec<Key>,
         keys_selected_state: crate::ItemSelectorState,
@@ -54,24 +63,49 @@ fn create_keys_app() {
     }
 
     let main_menu: ComponentDefinition<AppState> = ComponentDefinition::new(|state| {
-        let item_selector: std::rc::Rc<ItemSelector<AppState, Key>> = ItemSelector::new(
-            |state| &state.keys,
-            |state| state.keys_selected_state.clone(),
-            |state, new_state| state.keys_selected_state = new_state,
-            |key: &Key, selected: bool| {
-                elements::Style::new_with_style(
-                    StyleDefinition {
-                        background: if selected {
-                            Some(PALETTE_DREAM.light)
-                        } else {
-                            Some(PALETTE_DREAM.darkest)
+        let is_selected = state.keys_selected_state.selected.is_some();
+
+        let item_selector_view: fn(&AppState) -> Element<AppState> = |_state| {
+            ItemSelector::<AppState, Key>::new(
+                |state| &state.keys,
+                |state| state.keys_selected_state.clone(),
+                |state, new_state| state.keys_selected_state = new_state,
+                |key: &Key, selected: bool| {
+                    elements::Style::new_with_style(
+                        StyleDefinition {
+                            background: if selected {
+                                Some(PALETTE_DREAM.light)
+                            } else {
+                                Some(PALETTE_DREAM.darkest)
+                            },
+                            ..BORDERED_STYLE
                         },
-                        ..bordered_style
-                    },
-                    Text::new(format!("Key: {} {}", key.text, key.key)),
-                )
-            },
-        );
+                        Text::new(format!("Key: {} {}", key.text, key.key)),
+                    )
+                },
+            )
+        };
+
+        let selected_view: fn(&AppState) -> Element<AppState> = |state: &AppState| {
+            let selected_key: Key = state
+                .keys_selected_state
+                .selected
+                .map(|index| &state.keys[index])
+                .unwrap_or(&Key::default())
+                .clone();
+            elements::border(
+                BorderDefinition {
+                    color: PALETTE_DREAM.darkest,
+                    size: EdgeInsets::all(2),
+                },
+                Text::new(format!("Selected: {} {}", selected_key.text, selected_key.key))
+            )
+        };
+
+        let actual_view = match is_selected {
+            true => selected_view,
+            false => item_selector_view,
+        };
 
         Stack::col(vec![
             elements::border(
@@ -79,9 +113,13 @@ fn create_keys_app() {
                     color: PALETTE_DREAM.darkest,
                     size: EdgeInsets::all(2),
                 },
-                Text::new("Main Menu".to_string()),
+                Text::new(if is_selected {
+                    "Selected".to_string()
+                } else {
+                    "Not selected".to_string()
+                }),
             ) as Element<AppState>,
-            item_selector as Element<AppState>,
+            elements::Component::new(actual_view) as Element<AppState>,
         ])
     });
 

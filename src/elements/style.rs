@@ -1,7 +1,3 @@
-use std::str::Bytes;
-
-use embedded_graphics::primitives::PrimitiveStyle;
-
 use crate::defs::*;
 use crate::utils::*;
 
@@ -78,10 +74,6 @@ impl<S> Style<S> {
         self.style.margin.top_left_offset()
             + self.style.border.size.top_left_offset()
             + self.style.padding.top_left_offset()
-    }
-
-    fn child_size(&self, size: Size) -> Size {
-        size - self.added_size()
     }
 
     fn background_offset(&self) -> Point {
