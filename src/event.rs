@@ -32,7 +32,7 @@ impl TryFrom<SimulatorEvent> for Event {
         match event {
             SimulatorEvent::MouseButtonDown { mouse_btn, .. } => match mouse_btn {
                 MouseButton::Left => Ok(Event::ButtonPressed(Button::Principal)),
-                MouseButton::Right => Ok(Event::ButtonPressed(Button::Secondary)),
+                MouseButton::Right => Ok(Event::ButtonPressed(Button::Back)),
                 _ => Err(()),
             },
             SimulatorEvent::KeyDown { keycode, .. } => match keycode {
@@ -40,7 +40,9 @@ impl TryFrom<SimulatorEvent> for Event {
                 Keycode::Down => Ok(Event::DirectionPressed(Direction::Down)),
                 Keycode::Left => Ok(Event::DirectionPressed(Direction::Left)),
                 Keycode::Right => Ok(Event::DirectionPressed(Direction::Right)),
-                Keycode::Q => Ok(Event::ButtonPressed(Button::Back)),
+                Keycode::Z => Ok(Event::ButtonPressed(Button::Principal)),
+                Keycode::X => Ok(Event::ButtonPressed(Button::Back)),
+                Keycode::Space => Ok(Event::ButtonPressed(Button::Secondary)),
                 _ => Err(()),
             },
             _ => Err(()),
