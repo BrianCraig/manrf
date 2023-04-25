@@ -1,20 +1,20 @@
 use std::time::SystemTime;
 
-use crate::utils::*;
 use crate::defs::*;
+use crate::utils::*;
 use embedded_graphics_simulator::{
     OutputSettingsBuilder, SimulatorDisplay, SimulatorEvent, Window,
 };
 
-use crate::{ component::ComponentDefinition, App};
+use crate::{App, ComponentGenerator};
 
 type TINR<T> = fn(Size, &mut dyn Runner<T>);
 
 #[allow(dead_code)]
-pub fn test_in_window<T: Default>(size: Size, comp: ComponentDefinition<T>, callback: TINR<T>) {
+pub fn test_in_window<T: Default + 'static>(size: Size, comp: ComponentGenerator<T>, callback: TINR<T>) {
     let mut display = SimulatorDisplay::new(size);
 
-    let mut app = App::new(comp);
+    let mut app = App::new(comp, size);
 
     let mut frames_counter = (SystemTime::now(), 0);
 
@@ -27,8 +27,7 @@ pub fn test_in_window<T: Default>(size: Size, comp: ComponentDefinition<T>, call
     let mut window = Window::new("Hello World", &output_settings);
 
     'running: loop {
-        let nodes = app.render(size);
-        app.paint(&nodes, &mut display, Point::default());
+        app.draw(&mut display);
         window.update(&display);
 
         frames_counter.1 += 1;
@@ -36,14 +35,14 @@ pub fn test_in_window<T: Default>(size: Size, comp: ComponentDefinition<T>, call
             println!("FPS: {}", frames_counter.1);
             frames_counter = (SystemTime::now(), 0);
         }
-        
+
         for event in window.events() {
             match event {
                 SimulatorEvent::Quit => break 'running,
                 other => {
                     let event = Event::try_from(other);
                     if let Ok(event) = event {
-                        app.handle_event(event, &nodes);
+                        app.handle_event(event);
                         callback(size, &mut app);
                     }
                 }

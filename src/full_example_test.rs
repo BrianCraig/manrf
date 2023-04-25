@@ -15,7 +15,7 @@ const BORDERED_STYLE: StyleDefinition = StyleDefinition {
 };
 
 use crate::{
-    component::ComponentDefinition, testing_helpers::test_in_window, Element, Stack, Text,
+    testing_helpers::test_in_window, Element, Stack, Text,
 };
 
 #[derive(Clone)]
@@ -142,6 +142,5 @@ static MAIN_MENU: ComponentGenerator<AppState> = |state| {
 #[ignore]
 #[test]
 fn create_keys_app() {
-    let main_menu: ComponentDefinition<AppState> = ComponentDefinition::new(MAIN_MENU);
-    test_in_window::<AppState>(Size::new(128, 128), main_menu, |_, _| ());
+    test_in_window::<AppState>(Size::new(128, 128), MAIN_MENU, |_, _| ());
 }

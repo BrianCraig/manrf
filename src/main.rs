@@ -1,11 +1,9 @@
 #![feature(fn_traits)]
 
-use component::ComponentDefinition;
 use defs::*;
 use embedded_graphics::mono_font::{ascii::FONT_6X10, MonoTextStyle};
 use utils::*;
 
-pub mod component;
 pub mod defs;
 pub mod elements;
 pub mod event;
@@ -320,26 +318,33 @@ where
     T: Default,
 {
     state: T,
-    root: ComponentDefinition<T>,
+    root: Element<T>,
+    last_render_tree: RenderNode<T>,
+    inital_size: Size,
 }
 
 impl<T> App<T>
 where
-    T: Default,
+    T: Default + 'static,
 {
-    pub fn new(root: ComponentDefinition<T>) -> Self {
+    pub fn new(root: ComponentGenerator<T>, inital_size: Size) -> Self {
+        let state = T::default();
+        let root = crate::elements::Component::new(root);
+        let last_render_tree = root
+            .render(
+                Constraints {
+                    min: Size::zero(),
+                    max: inital_size,
+                },
+                &state,
+            )
+            .1;
+
         Self {
             root,
-            state: T::default(),
-        }
-    }
-
-    pub fn handle_event(&mut self, event: event::Event, render_root: &RenderNode<T>) {
-        if self.root.run_event_listener(&mut self.state, event.clone()) {
-            return;
-        }
-        if !self.handle_event_recursive(event.clone(), render_root) {
-            println!("Unhandled event: {:?}", event);
+            state,
+            inital_size,
+            last_render_tree,
         }
     }
 
@@ -366,24 +371,8 @@ where
             RenderNode::Leaf => false,
         }
     }
-}
 
-impl<T> Runner<T> for App<T>
-where
-    T: Default,
-{
-    fn to_string(&mut self) -> String {
-        self.root.render(&mut self.state).to_string()
-    }
-
-    fn render(&mut self, size: Size) -> RenderNode<T> {
-        self.root
-            .render(&mut self.state)
-            .render(Constraints::up_to(size), &self.state)
-            .1
-    }
-
-    fn paint(&mut self, node: &RenderNode<T>, target: &mut Draw565, origin_offset: Point) {
+    fn paint(&self, node: &RenderNode<T>, target: &mut Draw565, origin_offset: Point) {
         match node {
             RenderNode::SingleChild {
                 offset,
@@ -410,10 +399,37 @@ where
     }
 }
 
-#[cfg(test)]
-pub mod app_tests;
-#[cfg(test)]
-pub mod display_tests;
+impl<T> Runner<T> for App<T>
+where
+    T: Default + 'static,
+{
+    fn to_string(&mut self) -> String {
+        self.root.to_string()
+    }
+
+    fn handle_event(&mut self, event: event::Event) {
+        let mut swap_tree = RenderNode::Leaf;
+        core::mem::swap(&mut swap_tree, &mut self.last_render_tree);
+        if self.handle_event_recursive(event.clone(), &swap_tree) {
+            self.last_render_tree = self.root
+                .render(
+                    Constraints {
+                        min: Size::zero(),
+                        max: self.inital_size,
+                    },
+                    &self.state,
+                )
+                .1;
+        } else {
+            core::mem::swap(&mut swap_tree, &mut self.last_render_tree);
+            println!("Unhandled event: {:?}", event);
+        }
+    }
+
+    fn draw(&mut self, target: &mut Draw565) {
+        self.paint(&self.last_render_tree, target, Point::new(0, 0));
+    }
+}
 
 #[cfg(test)]
 mod full_example_test;

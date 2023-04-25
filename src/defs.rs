@@ -35,7 +35,8 @@ pub enum RenderNode<T> {
     Leaf,
 }
 pub trait Runner<S> {
+    #[deprecated]
     fn to_string(&mut self) -> String;
-    fn render(&mut self, size: Size) -> RenderNode<S>;
-    fn paint(&mut self, node: &RenderNode<S>, target: &mut Draw565, offset: Point);
+    fn handle_event(&mut self, event: crate::event::Event);
+    fn draw(&mut self, target: &mut Draw565);
 }
