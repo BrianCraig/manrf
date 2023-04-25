@@ -1,6 +1,7 @@
 use crate::utils::*;
 use crate::defs::*;
 
+#[deprecated = "Use element::Component and element::Handler instead"]
 pub struct ComponentDefinition<T> {
     generator: ComponentGenerator<T>,
     events_listener: Option<EventFunction<T>>,

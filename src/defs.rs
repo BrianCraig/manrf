@@ -17,7 +17,7 @@ pub type Element<S> = Rc<dyn ElementTrait<S>>;
 
 pub type EventFunction<T> = fn(&mut T, Event) -> bool;
 
-pub type ComponentGenerator<T> = fn(&mut T) -> Element<T>;
+pub type ComponentGenerator<S> = fn(&S) -> Element<S>;
 
 #[derive(Clone)]
 pub enum RenderNode<T> {
