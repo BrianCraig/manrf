@@ -14,7 +14,6 @@ jobs:
       - run: sudo apt update
       - run: sudo apt install libsdl2-dev
       - uses: actions-rs/cargo@v1
-        working-directory: ./manrf
         with:
           command: test
-          args: --all
+          args: --all --manifest-path manrf/Cargo.toml
