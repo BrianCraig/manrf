@@ -4,10 +4,12 @@ use crate::{defs::Element, utils::EdgeInsets};
 mod component;
 mod handler;
 mod style;
+mod align;
 
 pub use component::*;
 pub use handler::*;
 pub use style::*;
+pub use align::*;
 
 
 pub fn border<S: 'static>(border: BorderDefinition, child: Element<S>) -> Element<S> {
@@ -30,6 +32,16 @@ pub fn background<S: 'static>(background: Rgb888, child: Element<S>) -> Element<
         EdgeInsets::all(0),
         BorderDefinition::none(),
         EdgeInsets::all(0),
+        child,
+    )
+}
+
+pub fn center<S: 'static>(child: Element<S>) -> Element<S> {
+    Align::new(
+        Alignment2D {
+            horizontal: Alignment::Center,
+            vertical: Alignment::Center,
+        },
         child,
     )
 }
