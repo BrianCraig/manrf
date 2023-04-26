@@ -14,9 +14,7 @@ const BORDERED_STYLE: StyleDefinition = StyleDefinition {
     padding: EdgeInsets::all(2),
 };
 
-use crate::{
-    testing_helpers::test_in_window, Element, Stack, Text,
-};
+use crate::{testing_helpers::test_in_window, Element, Stack, Text};
 
 #[derive(Clone)]
 struct Key {
@@ -122,7 +120,7 @@ static MAIN_MENU: ComponentGenerator<AppState> = |state| {
 
     elements::background(
         PALETTE_DREAM.darkest,
-        Stack::col(vec![
+        elements::center(Stack::col(vec![
             elements::border(
                 BorderDefinition {
                     color: PALETTE_DREAM.darkest,
@@ -135,7 +133,7 @@ static MAIN_MENU: ComponentGenerator<AppState> = |state| {
                 }),
             ) as Element<AppState>,
             elements::Component::new(actual_view) as Element<AppState>,
-        ]),
+        ])),
     )
 };
 
