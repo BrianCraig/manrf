@@ -1,8 +1,10 @@
 use embedded_graphics_simulator::SimulatorDisplay;
 use crate::utils::*;
 
+pub trait State: Default + 'static {}
+
 pub type Draw565 = SimulatorDisplay<Rgb565>;
-pub trait ElementTrait<S> {
+pub trait ElementTrait<S: State> {
     fn to_string(&self) -> String {
         todo!()
     }
@@ -34,7 +36,7 @@ pub enum RenderNode<T> {
     },
     Leaf,
 }
-pub trait Runner<S> {
+pub trait Runner {
     #[deprecated]
     fn to_string(&mut self) -> String;
     fn handle_event(&mut self, event: crate::event::Event);

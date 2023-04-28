@@ -93,7 +93,7 @@ impl<S> Style<S> {
     }
 }
 
-impl<S> ElementTrait<S> for Style<S> {
+impl<S: State> ElementTrait<S> for Style<S> {
     fn render(&self, _constraints: Constraints, state: &S) -> (Size, RenderNode<S>) {
         let added_size = self.added_size();
         let constraints = _constraints.shrink(&added_size);

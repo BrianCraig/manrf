@@ -12,18 +12,18 @@ pub struct Alignment2D {
     pub vertical: Alignment,
 }
 
-pub struct Align<S: 'static> {
+pub struct Align<S: State> {
     alignment: Alignment2D,
     child: Element<S>,
 }
 
-impl<S: 'static> Align<S> {
+impl<S: State> Align<S> {
     pub fn new(alignment: Alignment2D, child: Element<S>) -> Rc<Self> {
         Rc::new(Self { alignment, child })
     }
 }
 
-impl<S: 'static> ElementTrait<S> for Align<S> {
+impl<S: State> ElementTrait<S> for Align<S> {
     fn render(&self, constraints: Constraints, state: &S) -> (Size, RenderNode<S>) {
         let (child_size, child_node) = self.child.render(constraints, state);
         let size = constraints.max;

@@ -8,10 +8,10 @@ use embedded_graphics_simulator::{
 
 use crate::{App, ComponentGenerator};
 
-type TINR<T> = fn(Size, &mut dyn Runner<T>);
+type TINR = fn(Size, &mut dyn Runner);
 
 #[allow(dead_code)]
-pub fn test_in_window<T: Default + 'static>(size: Size, comp: ComponentGenerator<T>, callback: TINR<T>) {
+pub fn test_in_window<S: State>(size: Size, comp: ComponentGenerator<S>, callback: TINR) {
     let mut display = SimulatorDisplay::new(size);
 
     let mut app = App::new(comp, size);

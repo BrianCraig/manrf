@@ -8,13 +8,13 @@ pub struct Handler<S> {
     child: Element<S>,
 }
 
-impl<S> Handler<S> {
+impl<S: State> Handler<S> {
     pub fn new(handler: EventHandler<S>, child: Element<S>) -> Rc<Self> {
         Rc::new(Self { handler, child })
     }
 }
 
-impl<S> ElementTrait<S> for Handler<S> {
+impl<S: State> ElementTrait<S> for Handler<S> {
     fn render(&self, constraints: Constraints, state: &S) -> (Size, RenderNode<S>) {
         let (size, child_node) = self.child.render(constraints, state);
         (

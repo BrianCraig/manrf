@@ -7,13 +7,13 @@ pub struct Component<S> {
     generator: Generator<S>,
 }
 
-impl<S> Component<S> {
+impl<S: State> Component<S> {
     pub fn new(generator: Generator<S>) -> Rc<Self> {
         Rc::new(Self { generator })
     }
 }
 
-impl<S> ElementTrait<S> for Component<S> {
+impl<S: State> ElementTrait<S> for Component<S> {
     fn render(&self, constraints: Constraints, state: &S) -> (Size, RenderNode<S>) {
         let child: Rc<dyn ElementTrait<S>> = (self.generator)(state);
         let (size, child_node) = child.render(constraints, state);

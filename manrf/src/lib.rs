@@ -15,13 +15,13 @@ pub struct ListSelector<S> {
     selected: usize,
 }
 
-impl<S> ListSelector<S> {
+impl<S: State> ListSelector<S> {
     pub fn new(items: Vec<Element<S>>, selected: usize) -> Rc<Self> {
         Rc::new(ListSelector { items, selected })
     }
 }
 
-impl<S> ElementTrait<S> for ListSelector<S> {
+impl<S: State> ElementTrait<S> for ListSelector<S> {
     fn to_string(&self) -> String {
         self.items[self.selected].to_string()
     }
@@ -48,13 +48,13 @@ pub struct Stack<S> {
     items: Vec<Element<S>>,
 }
 
-impl<S> Stack<S> {
+impl<S: State> Stack<S> {
     pub fn col(items: Vec<Element<S>>) -> Rc<Self> {
         Rc::new(Stack { items })
     }
 }
 
-impl<S> ElementTrait<S> for Stack<S> {
+impl<S: State> ElementTrait<S> for Stack<S> {
     fn to_string(&self) -> String {
         let coll = self
             .items
@@ -119,7 +119,7 @@ impl<S> Box<S> {
     }
 }
 
-impl<S> ElementTrait<S> for Box<S> {
+impl<S: State> ElementTrait<S> for Box<S> {
     fn render(&self, _constraints: Constraints, state: &S) -> (Size, RenderNode<S>) {
         (
             self.size,
@@ -165,7 +165,7 @@ impl Text {
     }
 }
 
-impl<S> ElementTrait<S> for Text {
+impl<S: State> ElementTrait<S> for Text {
     fn to_string(&self) -> String {
         self.val.to_string()
     }
@@ -200,7 +200,7 @@ impl Number {
     }
 }
 
-impl<S> ElementTrait<S> for Number {
+impl<S: State> ElementTrait<S> for Number {
     fn to_string(&self) -> String {
         self.val.to_string()
     }
@@ -250,7 +250,7 @@ impl<S, T> ItemSelector<S, T> {
     }
 }
 
-impl<S, T> ElementTrait<S> for ItemSelector<S, T> {
+impl<S: State, T> ElementTrait<S> for ItemSelector<S, T> {
     fn render(&self, constraints: Constraints, state: &S) -> (Size, RenderNode<S>) {
         let mut size = Size::new(0, 0);
         let mut children = Vec::new();
@@ -307,9 +307,7 @@ impl<S, T> ElementTrait<S> for ItemSelector<S, T> {
     }
 }
 
-pub struct App<T>
-where
-    T: Default,
+pub struct App<T: State>
 {
     state: T,
     root: Element<T>,
@@ -317,9 +315,7 @@ where
     inital_size: Size,
 }
 
-impl<T> App<T>
-where
-    T: Default + 'static,
+impl<T: State> App<T>
 {
     pub fn new(root: ComponentGenerator<T>, inital_size: Size) -> Self {
         let state = T::default();
@@ -393,9 +389,7 @@ where
     }
 }
 
-impl<T> Runner<T> for App<T>
-where
-    T: Default + 'static,
+impl<T: State> Runner for App<T>
 {
     fn to_string(&mut self) -> String {
         self.root.to_string()
