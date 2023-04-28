@@ -1,5 +1,3 @@
-#![feature(fn_traits)]
-
 use defs::*;
 use embedded_graphics::mono_font::{ascii::FONT_6X10, MonoTextStyle};
 use utils::*;
@@ -10,9 +8,7 @@ pub mod event;
 
 pub mod palette;
 mod testing_helpers;
-mod utils;
-
-fn main() {}
+pub mod utils;
 
 pub struct ListSelector<S> {
     items: Vec<Element<S>>,
