@@ -12,19 +12,19 @@ pub struct Alignment2D {
     pub vertical: Alignment,
 }
 
-pub struct Align<S: State> {
+pub struct Align<S: State, T:Target888> {
     alignment: Alignment2D,
-    child: Element<S>,
+    child: Element<S, T>,
 }
 
-impl<S: State> Align<S> {
-    pub fn new(alignment: Alignment2D, child: Element<S>) -> Rc<Self> {
+impl<S: State, T:Target888> Align<S, T> {
+    pub fn new(alignment: Alignment2D, child: Element<S, T>) -> Rc<Self> {
         Rc::new(Self { alignment, child })
     }
 }
 
-impl<S: State> ElementTrait<S> for Align<S> {
-    fn render(&self, constraints: Constraints, state: &S) -> (Size, RenderNode<S>) {
+impl<S: State,  T:Target888> ElementTrait<S, T> for Align<S, T> {
+    fn render(&self, constraints: Constraints, state: &S) -> (Size, RenderNode<S, T>) {
         let (child_size, child_node) = self.child.render(constraints, state);
         let size = constraints.max;
         let offset_x = match self.alignment.horizontal {

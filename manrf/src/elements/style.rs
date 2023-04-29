@@ -26,18 +26,18 @@ pub struct StyleDefinition {
     pub padding: EdgeInsets,
 }
 
-pub struct Style<S> {
+pub struct Style<S, T> {
     style: StyleDefinition,
-    child: Element<S>,
+    child: Element<S, T>,
 }
 
-impl<S> Style<S> {
+impl<S, T> Style<S, T> {
     pub fn new(
         background: Option<Rgb888>,
         margin: EdgeInsets,
         border: BorderDefinition,
         padding: EdgeInsets,
-        child: Element<S>,
+        child: Element<S, T>,
     ) -> Rc<Self> {
         Rc::new(Self {
             style: StyleDefinition {
@@ -50,11 +50,11 @@ impl<S> Style<S> {
         })
     }
 
-    pub fn new_with_style(style: StyleDefinition, child: Element<S>) -> Rc<Self> {
+    pub fn new_with_style(style: StyleDefinition, child: Element<S, T>) -> Rc<Self> {
         Rc::new(Self { style, child })
     }
 
-    pub fn new_with_background(background: Rgb888, child: Element<S>) -> Rc<Self> {
+    pub fn new_with_background(background: Rgb888, child: Element<S, T>) -> Rc<Self> {
         Rc::new(Self {
             style: StyleDefinition {
                 background: Some(background),
@@ -93,8 +93,8 @@ impl<S> Style<S> {
     }
 }
 
-impl<S: State> ElementTrait<S> for Style<S> {
-    fn render(&self, _constraints: Constraints, state: &S) -> (Size, RenderNode<S>) {
+impl<S: State, T:Target888> ElementTrait<S, T> for Style<S, T> {
+    fn render(&self, _constraints: Constraints, state: &S) -> (Size, RenderNode<S, T>) {
         let added_size = self.added_size();
         let constraints = _constraints.shrink(&added_size);
 
@@ -111,7 +111,7 @@ impl<S: State> ElementTrait<S> for Style<S> {
     }
 
     #[allow(unused_must_use)]
-    fn paint(&self, size: Size, pos: Point, display: &mut Draw565) {
+    fn paint(&self, size: Size, pos: Point, display: &mut T) {
         if let Some(color) = self.style.background {
             display.fill_solid(
                 &Rectangle::new(self.background_offset() + pos, self.background_size(size)),

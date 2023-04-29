@@ -6,6 +6,7 @@ use crate::utils::*;
 
 use crate::{ItemSelector, ItemSelectorState};
 use embedded_graphics::prelude::Size;
+use embedded_graphics_simulator::SimulatorDisplay;
 
 const BORDERED_STYLE: StyleDefinition = StyleDefinition {
     background: Some(PALETTE_DREAM.darkest),
@@ -69,8 +70,8 @@ static GO_BACK: elements::EventHandler<AppState> = |state, event| {
     }
 };
 
-static ITEM_SELECTOR_VIEW: elements::Generator<AppState> = |_| {
-    ItemSelector::<AppState, Key>::new(
+static ITEM_SELECTOR_VIEW: elements::Generator<AppState, SimulatorDisplay<Rgb888>> = |_| {
+    ItemSelector::<AppState, _, Key>::new(
         |state| &state.keys,
         |state| state.keys_selected_state.clone(),
         |state, new_state| state.keys_selected_state = new_state,
@@ -90,7 +91,7 @@ static ITEM_SELECTOR_VIEW: elements::Generator<AppState> = |_| {
     )
 };
 
-static SELECTED_VIEW: elements::Generator<AppState> = |state| {
+static SELECTED_VIEW: elements::Generator<AppState, SimulatorDisplay<Rgb888>> = |state| {
     let selected_key: Key = state
         .keys_selected_state
         .selected
@@ -112,7 +113,7 @@ static SELECTED_VIEW: elements::Generator<AppState> = |state| {
     )
 };
 
-static MAIN_MENU: ComponentGenerator<AppState> = |state| {
+static MAIN_MENU: ComponentGenerator<AppState, SimulatorDisplay<Rgb888>> = |state| {
     let is_selected = state.keys_selected_state.selected.is_some();
 
     let actual_view = match is_selected {
@@ -133,8 +134,8 @@ static MAIN_MENU: ComponentGenerator<AppState> = |state| {
                 } else {
                     "Not selected".to_string()
                 }),
-            ) as Element<AppState>,
-            elements::Component::new(actual_view) as Element<AppState>,
+            ) as Element<AppState, SimulatorDisplay<Rgb888>>,
+            elements::Component::new(actual_view) as Element<AppState, SimulatorDisplay<Rgb888>>,
         ])),
     )
 };

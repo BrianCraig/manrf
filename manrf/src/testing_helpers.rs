@@ -11,10 +11,10 @@ use crate::{App, ComponentGenerator};
 type TINR = fn(Size, &mut dyn Runner);
 
 #[allow(dead_code)]
-pub fn test_in_window<S: State>(size: Size, comp: ComponentGenerator<S>, callback: TINR) {
-    let mut display = SimulatorDisplay::new(size);
+pub fn test_in_window<S: State>(size: Size, comp: ComponentGenerator<S, SimulatorDisplay<Rgb888>>, callback: TINR) {
+    let display:SimulatorDisplay<Rgb888> = SimulatorDisplay::new(size);
 
-    let mut app = App::new(comp, size);
+    let mut app = App::new(comp, size, display);
 
     let mut frames_counter = (SystemTime::now(), 0);
 
@@ -27,8 +27,8 @@ pub fn test_in_window<S: State>(size: Size, comp: ComponentGenerator<S>, callbac
     let mut window = Window::new("Hello World", &output_settings);
 
     'running: loop {
-        app.draw(&mut display);
-        window.update(&display);
+        app.draw();
+        window.update(&app.target);
 
         frames_counter.1 += 1;
         if frames_counter.0.elapsed().unwrap().as_secs() >= 1 {

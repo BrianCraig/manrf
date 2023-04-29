@@ -10,51 +10,17 @@ pub mod palette;
 mod testing_helpers;
 pub mod utils;
 
-pub struct ListSelector<S> {
-    items: Vec<Element<S>>,
-    selected: usize,
+pub struct Stack<S, T> {
+    items: Vec<Element<S, T>>,
 }
 
-impl<S: State> ListSelector<S> {
-    pub fn new(items: Vec<Element<S>>, selected: usize) -> Rc<Self> {
-        Rc::new(ListSelector { items, selected })
-    }
-}
-
-impl<S: State> ElementTrait<S> for ListSelector<S> {
-    fn to_string(&self) -> String {
-        self.items[self.selected].to_string()
-    }
-
-    fn render(&self, constraints: Constraints, state: &S) -> (Size, RenderNode<S>) {
-        let (size, render_node) = self.items[self.selected].render(constraints, state);
-        (
-            size,
-            RenderNode::SingleChild {
-                offset: Point::zero(),
-                child: std::boxed::Box::new(render_node),
-                renderer: self.items[self.selected].clone(),
-                size,
-            },
-        )
-    }
-
-    fn paint(&self, size: Size, pos: Point, display: &mut Draw565) {
-        self.items[self.selected].paint(size, pos, display)
-    }
-}
-
-pub struct Stack<S> {
-    items: Vec<Element<S>>,
-}
-
-impl<S: State> Stack<S> {
-    pub fn col(items: Vec<Element<S>>) -> Rc<Self> {
+impl<S: State, T: Target888> Stack<S, T> {
+    pub fn col(items: Vec<Element<S, T>>) -> Rc<Self> {
         Rc::new(Stack { items })
     }
 }
 
-impl<S: State> ElementTrait<S> for Stack<S> {
+impl<S: State, T: Target888> ElementTrait<S, T> for Stack<S, T> {
     fn to_string(&self) -> String {
         let coll = self
             .items
@@ -65,7 +31,7 @@ impl<S: State> ElementTrait<S> for Stack<S> {
         format!("[{}]", coll)
     }
 
-    fn render(&self, constraints: Constraints, state: &S) -> (Size, RenderNode<S>) {
+    fn render(&self, constraints: Constraints, state: &S) -> (Size, RenderNode<S, T>) {
         // we keep the constraints from the parent;
 
         let mut sum = 0_u32;
@@ -107,20 +73,20 @@ impl<S: State> ElementTrait<S> for Stack<S> {
     }
 }
 
-pub struct Box<S> {
+pub struct Box<S, T> {
     size: Size,
     color: Rgb565,
-    child: Option<Element<S>>,
+    child: Option<Element<S, T>>,
 }
 
-impl<S> Box<S> {
-    pub fn exactly(size: Size, color: Rgb565, child: Option<Element<S>>) -> Rc<Self> {
+impl<S, T> Box<S, T> {
+    pub fn exactly(size: Size, color: Rgb565, child: Option<Element<S, T>>) -> Rc<Self> {
         Rc::new(Self { size, color, child })
     }
 }
 
-impl<S: State> ElementTrait<S> for Box<S> {
-    fn render(&self, _constraints: Constraints, state: &S) -> (Size, RenderNode<S>) {
+impl<S: State, T: Target888> ElementTrait<S, T> for Box<S, T> {
+    fn render(&self, _constraints: Constraints, state: &S) -> (Size, RenderNode<S, T>) {
         (
             self.size,
             match &self.child {
@@ -144,13 +110,13 @@ impl<S: State> ElementTrait<S> for Box<S> {
         )
     }
 
-    fn paint(&self, _size: Size, pos: Point, display: &mut Draw565) {
+    fn paint(&self, _size: Size, pos: Point, display: &mut T) {
         let _ = display.fill_solid(
             &Rectangle {
                 top_left: pos,
                 size: self.size,
             },
-            self.color,
+            self.color.into(),
         );
     }
 }
@@ -165,56 +131,24 @@ impl Text {
     }
 }
 
-impl<S: State> ElementTrait<S> for Text {
+impl<S: State, T: Target888> ElementTrait<S, T> for Text {
     fn to_string(&self) -> String {
         self.val.to_string()
     }
 
-    fn render(&self, constraints: Constraints, _state: &S) -> (Size, RenderNode<S>) {
+    fn render(&self, constraints: Constraints, _state: &S) -> (Size, RenderNode<S, T>) {
         (
             constraints.clamp(&Size::new(self.val.len() as u32 * 6, 10)),
             RenderNode::Leaf,
         )
     }
 
-    fn paint(&self, _size: Size, pos: Point, display: &mut Draw565) {
-        let mut small_style = MonoTextStyle::new(&FONT_6X10, Rgb565::WHITE);
-        small_style.underline_color = embedded_graphics::text::DecorationColor::Custom(Rgb565::RED);
-        small_style.background_color = Some(Rgb565::GREEN);
+    fn paint(&self, _size: Size, pos: Point, display: &mut T) {
+        let mut small_style = MonoTextStyle::new(&FONT_6X10, Rgb888::WHITE);
+        small_style.underline_color = embedded_graphics::text::DecorationColor::Custom(Rgb888::RED);
+        small_style.background_color = Some(Rgb888::GREEN);
         let _ = embedded_graphics::text::Text::new(
             self.val.as_str(),
-            pos + Point::new(0, small_style.font.baseline as i32),
-            small_style,
-        )
-        .draw(display);
-    }
-}
-
-pub struct Number {
-    val: i32,
-}
-
-impl Number {
-    pub fn new(val: i32) -> Rc<Self> {
-        Rc::new(Self { val })
-    }
-}
-
-impl<S: State> ElementTrait<S> for Number {
-    fn to_string(&self) -> String {
-        self.val.to_string()
-    }
-
-    fn render(&self, _constraints: Constraints, _state: &S) -> (Size, RenderNode<S>) {
-        (Size::new(50, 10), RenderNode::Leaf)
-    }
-
-    fn paint(&self, _size: Size, pos: Point, display: &mut Draw565) {
-        let mut small_style = MonoTextStyle::new(&FONT_6X10, Rgb565::WHITE);
-        small_style.underline_color = embedded_graphics::text::DecorationColor::Custom(Rgb565::RED);
-        small_style.background_color = Some(Rgb565::GREEN);
-        let _ = embedded_graphics::text::Text::new(
-            self.val.to_string().as_str(),
             pos + Point::new(0, small_style.font.baseline as i32),
             small_style,
         )
@@ -227,19 +161,19 @@ pub struct ItemSelectorState {
     pub active: usize,
     pub selected: Option<usize>,
 }
-pub struct ItemSelector<S, T> {
-    items_lookup: fn(&S) -> &Vec<T>,
+pub struct ItemSelector<S, T, V> {
+    items_lookup: fn(&S) -> &Vec<V>,
     selector_state_lookup: fn(&S) -> ItemSelectorState,
     set_selector_state: fn(&mut S, ItemSelectorState),
-    render_item: fn(&T, bool) -> Element<S>,
+    render_item: fn(&V, bool) -> Element<S, T>,
 }
 
-impl<S, T> ItemSelector<S, T> {
+impl<S, T, V> ItemSelector<S, T, V> {
     pub fn new(
-        items_lookup: fn(&S) -> &Vec<T>,
+        items_lookup: fn(&S) -> &Vec<V>,
         selector_state_lookup: fn(&S) -> ItemSelectorState,
         set_selector_state: fn(&mut S, ItemSelectorState),
-        render_item: fn(&T, bool) -> Element<S>,
+        render_item: fn(&V, bool) -> Element<S, T>,
     ) -> Rc<Self> {
         Rc::new(Self {
             items_lookup,
@@ -250,8 +184,8 @@ impl<S, T> ItemSelector<S, T> {
     }
 }
 
-impl<S: State, T> ElementTrait<S> for ItemSelector<S, T> {
-    fn render(&self, constraints: Constraints, state: &S) -> (Size, RenderNode<S>) {
+impl<S: State, T: Target888, V> ElementTrait<S, T> for ItemSelector<S, T, V> {
+    fn render(&self, constraints: Constraints, state: &S) -> (Size, RenderNode<S, T>) {
         let mut size = Size::new(0, 0);
         let mut children = Vec::new();
         let items = (self.items_lookup)(state);
@@ -307,18 +241,17 @@ impl<S: State, T> ElementTrait<S> for ItemSelector<S, T> {
     }
 }
 
-pub struct App<T: State>
-{
-    state: T,
-    root: Element<T>,
-    last_render_tree: RenderNode<T>,
+pub struct App<S: State, T: Target888> {
+    state: S,
+    root: Element<S, T>,
+    last_render_tree: RenderNode<S, T>,
     inital_size: Size,
+    pub target: T,
 }
 
-impl<T: State> App<T>
-{
-    pub fn new(root: ComponentGenerator<T>, inital_size: Size) -> Self {
-        let state = T::default();
+impl<S: State, T: Target888> App<S, T> {
+    pub fn new(root: ComponentGenerator<S, T>, inital_size: Size, target: T) -> Self {
+        let state = S::default();
         let root = crate::elements::Component::new(root);
         let last_render_tree = root
             .render(
@@ -335,10 +268,15 @@ impl<T: State> App<T>
             state,
             inital_size,
             last_render_tree,
+            target,
         }
     }
 
-    fn handle_event_recursive(&mut self, event: event::Event, render_root: &RenderNode<T>) -> bool {
+    fn handle_event_recursive(
+        &mut self,
+        event: event::Event,
+        render_root: &RenderNode<S, T>,
+    ) -> bool {
         match render_root {
             RenderNode::SingleChild {
                 offset: _,
@@ -362,7 +300,7 @@ impl<T: State> App<T>
         }
     }
 
-    fn paint(&self, node: &RenderNode<T>, target: &mut Draw565, origin_offset: Point) {
+    fn paint(node: &RenderNode<S, T>, target: &mut T, origin_offset: Point) {
         match node {
             RenderNode::SingleChild {
                 offset,
@@ -372,7 +310,7 @@ impl<T: State> App<T>
             } => {
                 let new_offset = origin_offset + offset.clone();
                 renderer.paint(*size, new_offset, target);
-                self.paint(child, target, new_offset);
+                Self::paint(child, target, new_offset);
             }
             RenderNode::MultiChild {
                 offset,
@@ -381,7 +319,7 @@ impl<T: State> App<T>
             } => {
                 let new_offset = origin_offset + offset.clone();
                 for item in child {
-                    self.paint(item, target, new_offset);
+                    Self::paint(item, target, new_offset);
                 }
             }
             RenderNode::Leaf => {}
@@ -389,8 +327,7 @@ impl<T: State> App<T>
     }
 }
 
-impl<T: State> Runner for App<T>
-{
+impl<S: State, T: Target888> Runner for App<S, T> {
     fn to_string(&mut self) -> String {
         self.root.to_string()
     }
@@ -399,7 +336,8 @@ impl<T: State> Runner for App<T>
         let mut swap_tree = RenderNode::Leaf;
         core::mem::swap(&mut swap_tree, &mut self.last_render_tree);
         if self.handle_event_recursive(event.clone(), &swap_tree) {
-            self.last_render_tree = self.root
+            self.last_render_tree = self
+                .root
                 .render(
                     Constraints {
                         min: Size::zero(),
@@ -414,8 +352,8 @@ impl<T: State> Runner for App<T>
         }
     }
 
-    fn draw(&mut self, target: &mut Draw565) {
-        self.paint(&self.last_render_tree, target, Point::new(0, 0));
+    fn draw(&mut self) {
+        Self::paint(&self.last_render_tree, &mut self.target, Point::new(0, 0));
     }
 }
 
