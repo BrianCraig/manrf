@@ -1,0 +1,1 @@
+sudo chown bri /dev/ttyUSB0
