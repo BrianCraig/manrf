@@ -1,4 +1,4 @@
-use crate::defs::{ComponentGenerator, State};
+use crate::defs::{ComponentGenerator};
 use crate::elements;
 use crate::elements::{BorderDefinition, StyleDefinition};
 use crate::palette::PALETTE_DREAM;
@@ -45,8 +45,6 @@ struct AppState {
     keys: Vec<Key>,
     keys_selected_state: crate::ItemSelectorState,
 }
-
-impl State for AppState {}
 
 impl Default for AppState {
     fn default() -> Self {

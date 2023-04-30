@@ -10,19 +10,17 @@ pub mod palette;
 mod testing_helpers;
 pub mod utils;
 
-pub struct Stack<S, T> {
-    items: Vec<Element<S, T>>,
+pub struct Stack<'a, S, T> {
+    items: Vec<Element<'a, S, T>>,
 }
 
-impl<S: State, T> Stack<S, T> {
-    pub fn col(items: Vec<Element<S, T>>) -> Rc<Self> {
+impl<'a, S: Default, T> Stack<'a, S, T> {
+    pub fn col(items: Vec<Element<'a, S, T>>) -> Rc<Self> {
         Rc::new(Stack { items })
     }
 }
 
-impl<S: State, T: DrawTarget<Color = Rgb888>> ElementTrait<S, T>
-    for Stack<S, T>
-{
+impl<'a, S: Default, T: DrawTarget<Color = Rgb888>> ElementTrait<'a, S, T> for Stack<'a, S, T> {
     fn to_string(&self) -> String {
         let coll = self
             .items
@@ -33,7 +31,7 @@ impl<S: State, T: DrawTarget<Color = Rgb888>> ElementTrait<S, T>
         format!("[{}]", coll)
     }
 
-    fn render(&self, constraints: Constraints, state: &S) -> (Size, RenderNode<S, T>) {
+    fn render(&self, constraints: Constraints, state: &S) -> (Size, RenderNode<'a, S, T>) {
         // we keep the constraints from the parent;
 
         let mut sum = 0_u32;
@@ -75,22 +73,20 @@ impl<S: State, T: DrawTarget<Color = Rgb888>> ElementTrait<S, T>
     }
 }
 
-pub struct Box<S, T> {
+pub struct Box<'a, S, T> {
     size: Size,
     color: Rgb565,
-    child: Option<Element<S, T>>,
+    child: Option<Element<'a, S, T>>,
 }
 
-impl<S, T> Box<S, T> {
-    pub fn exactly(size: Size, color: Rgb565, child: Option<Element<S, T>>) -> Rc<Self> {
+impl<'a, S, T> Box<'a, S, T> {
+    pub fn exactly(size: Size, color: Rgb565, child: Option<Element<'a, S, T>>) -> Rc<Self> {
         Rc::new(Self { size, color, child })
     }
 }
 
-impl<S: State, T: DrawTarget<Color = Rgb888>> ElementTrait<S, T>
-    for Box<S, T>
-{
-    fn render(&self, _constraints: Constraints, state: &S) -> (Size, RenderNode<S, T>) {
+impl<'a, S: Default, T: DrawTarget<Color = Rgb888>> ElementTrait<'a, S, T> for Box<'a, S, T> {
+    fn render(&self, _constraints: Constraints, state: &S) -> (Size, RenderNode<'a, S, T>) {
         (
             self.size,
             match &self.child {
@@ -135,14 +131,12 @@ impl Text {
     }
 }
 
-impl<S: State, T: DrawTarget<Color = Rgb888>> ElementTrait<S, T>
-    for Text
-{
+impl<'a, S: Default, T: DrawTarget<Color = Rgb888>> ElementTrait<'a, S, T> for Text {
     fn to_string(&self) -> String {
         self.val.to_string()
     }
 
-    fn render(&self, constraints: Constraints, _state: &S) -> (Size, RenderNode<S, T>) {
+    fn render(&self, constraints: Constraints, _state: &S) -> (Size, RenderNode<'a, S, T>) {
         (
             constraints.clamp(&Size::new(self.val.len() as u32 * 6, 10)),
             RenderNode::Leaf,
@@ -190,10 +184,8 @@ impl<S, T, V> ItemSelector<S, T, V> {
     }
 }
 
-impl<S: State, T: DrawTarget<Color = Rgb888>, V>
-    ElementTrait<S, T> for ItemSelector<S, T, V>
-{
-    fn render(&self, constraints: Constraints, state: &S) -> (Size, RenderNode<S, T>) {
+impl<'a,S: Default, T: DrawTarget<Color = Rgb888>, V> ElementTrait<'a,S, T> for ItemSelector<S, T, V> {
+    fn render(&self, constraints: Constraints, state: &S) -> (Size, RenderNode<'a,S, T>) {
         let mut size = Size::new(0, 0);
         let mut children = Vec::new();
         let items = (self.items_lookup)(state);
@@ -249,20 +241,18 @@ impl<S: State, T: DrawTarget<Color = Rgb888>, V>
     }
 }
 
-pub struct App<S: State, T> {
+pub struct App<'a, S: Default, T> {
     state: S,
-    root: Element<S, T>,
-    last_render_tree: RenderNode<S, T>,
+    root: Element<'a, S, T>,
+    last_render_tree: RenderNode<'a, S, T>,
     inital_size: Size,
     pub target: T,
 }
 
-impl<S: State, T: DrawTarget<Color = Rgb888> + 'static>
-    App<S, T>
-{
+impl<'a, S: Default, T: DrawTarget<Color = Rgb888> + 'static> App<'a, S, T> {
     pub fn new(root: ComponentGenerator<S, T>, inital_size: Size, target: T) -> Self {
         let state = S::default();
-        let root = crate::elements::Component::new(root);
+        let root: Rc<elements::Component<S, T>> = crate::elements::Component::new(root);
         let last_render_tree = root
             .render(
                 Constraints {
@@ -337,9 +327,7 @@ impl<S: State, T: DrawTarget<Color = Rgb888> + 'static>
     }
 }
 
-impl<S: State, T: DrawTarget<Color = Rgb888> + 'static> Runner
-    for App<S, T>
-{
+impl<'a,S: Default, T: DrawTarget<Color = Rgb888> + 'static> Runner for App<'a,S, T> {
     fn to_string(&mut self) -> String {
         self.root.to_string()
     }

@@ -1,21 +1,21 @@
 use crate::defs::*;
 use crate::utils::*;
 
-pub type EventHandler<S> = fn(&mut S, Event) -> bool;
+pub type EventHandler< S> = fn(&mut S, Event) -> bool;
 
-pub struct Handler<S, T> {
-    handler: EventHandler<S>,
-    child: Element<S, T>,
+pub struct Handler<'a, S, T> {
+    handler: EventHandler< S>,
+    child: Element<'a, S, T>,
 }
 
-impl<S: State, T> Handler<S, T> {
-    pub fn new(handler: EventHandler<S>, child: Element<S, T>) -> Rc<Self> {
+impl<'a, S: Default, T> Handler<'a, S, T> {
+    pub fn new(handler: EventHandler< S>, child: Element<'a, S, T>) -> Rc<Self> {
         Rc::new(Self { handler, child })
     }
 }
 
-impl<S: State, T:DrawTarget<Color = Rgb888>> ElementTrait<S, T> for Handler<S, T> {
-    fn render(&self, constraints: Constraints, state: &S) -> (Size, RenderNode<S, T>) {
+impl<'a, S: Default, T: DrawTarget<Color = Rgb888>> ElementTrait<'a, S, T> for Handler<'a, S, T> {
+    fn render(&self, constraints: Constraints, state: &'a S) -> (Size, RenderNode<'a, S, T>) {
         let (size, child_node) = self.child.render(constraints, state);
         (
             size,
@@ -28,7 +28,7 @@ impl<S: State, T:DrawTarget<Color = Rgb888>> ElementTrait<S, T> for Handler<S, T
         )
     }
 
-    fn event_handler(&self, state: &mut S, event: Event) -> bool {
+    fn event_handler(&self, state: &'a mut S, event: Event) -> bool {
         (self.handler)(state, event)
     }
 }

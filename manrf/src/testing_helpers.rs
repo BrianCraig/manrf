@@ -11,7 +11,7 @@ use crate::{App, ComponentGenerator};
 type TINR = fn(Size, &mut dyn Runner);
 
 #[allow(dead_code)]
-pub fn test_in_window<S: State>(size: Size, comp: ComponentGenerator<S, SimulatorDisplay<Rgb888>>, callback: TINR) {
+pub fn test_in_window<S: Default>(size: Size, comp: ComponentGenerator<S, SimulatorDisplay<Rgb888>>, callback: TINR) {
     let display:SimulatorDisplay<Rgb888> = SimulatorDisplay::new(size);
 
     let mut app = App::new(comp, size, display);

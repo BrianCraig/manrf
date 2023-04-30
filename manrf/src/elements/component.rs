@@ -7,15 +7,15 @@ pub struct Component<S, T> {
     generator: Generator<S, T>,
 }
 
-impl<S: State, T> Component<S, T> {
+impl<'a, S: Default, T> Component<S, T> {
     pub fn new(generator: Generator<S, T>) -> Rc<Self> {
         Rc::new(Self { generator })
     }
 }
 
-impl<S: State, T:DrawTarget<Color = Rgb888>> ElementTrait<S, T> for Component<S, T> {
-    fn render(&self, constraints: Constraints, state: &S) -> (Size, RenderNode<S, T>) {
-        let child: Rc<dyn ElementTrait<S, T>> = (self.generator)(state);
+impl<'a, S: Default, T: DrawTarget<Color = Rgb888>> ElementTrait<'a, S, T> for Component<S, T> {
+    fn render(&self, constraints: Constraints, state: &'a S) -> (Size, RenderNode<'a, S, T>) {
+        let child: Rc<dyn ElementTrait<'a, S, T>> = (self.generator)(state);
         let (size, child_node) = child.render(constraints, state);
         (
             size,
@@ -28,7 +28,11 @@ impl<S: State, T:DrawTarget<Color = Rgb888>> ElementTrait<S, T> for Component<S,
         )
     }
 
-    fn event_handler(&self, state: &mut S, event: Event) -> bool {
-        (self.generator)(state).event_handler(state, event)
+    fn event_handler(&self, state: &'a mut S, event: Event) -> bool {
+        let b:&S =  &*state;
+        let elem: Element<S, T> = (self.generator)(b);
+        drop(b);
+        let res = elem.event_handler(state, event);
+        res
     }
 }

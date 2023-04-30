@@ -1,5 +1,5 @@
 use crate::{
-    defs::{Element, State},
+    defs::{Element},
     utils::EdgeInsets,
 };
 use embedded_graphics::{pixelcolor::Rgb888, prelude::DrawTarget};
@@ -14,18 +14,18 @@ pub use component::*;
 pub use handler::*;
 pub use style::*;
 
-pub fn border<
-    S: State,
+pub fn border<'a,
+    S: Default,
     T: DrawTarget<Color = Rgb888> + 'static,
 >(
-    border: BorderDefinition,
-    child: Element<S, T>,
-) -> Element<S, T> {
+    border:  BorderDefinition,
+    child: Element<'a, S, T>,
+) -> Element<'a, S, T> {
     Style::new(None, EdgeInsets::all(0), border, EdgeInsets::all(0), child)
 }
 
 pub fn padding<
-    S: State,
+    S: Default,
     T: DrawTarget<Color = Rgb888> + 'static,
 >(
     padding: EdgeInsets,
@@ -41,7 +41,7 @@ pub fn padding<
 }
 
 pub fn background<
-    S: State,
+    S: Default,
     T: DrawTarget<Color = Rgb888> + 'static,
 >(
     background: Rgb888,
@@ -57,7 +57,7 @@ pub fn background<
 }
 
 pub fn center<
-    S: State,
+    S: Default,
     T: DrawTarget<Color = Rgb888> + 'static,
 >(
     child: Element<S, T>,
