@@ -93,7 +93,7 @@ impl<S, T> Style<S, T> {
     }
 }
 
-impl<S: State, T:Target888> ElementTrait<S, T> for Style<S, T> {
+impl<S: State, T:DrawTarget<Color = Rgb888>> ElementTrait<S, T> for Style<S, T> {
     fn render(&self, _constraints: Constraints, state: &S) -> (Size, RenderNode<S, T>) {
         let added_size = self.added_size();
         let constraints = _constraints.shrink(&added_size);

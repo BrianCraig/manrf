@@ -14,13 +14,15 @@ pub struct Stack<S, T> {
     items: Vec<Element<S, T>>,
 }
 
-impl<S: State, T: Target888> Stack<S, T> {
+impl<S: State, T> Stack<S, T> {
     pub fn col(items: Vec<Element<S, T>>) -> Rc<Self> {
         Rc::new(Stack { items })
     }
 }
 
-impl<S: State, T: Target888> ElementTrait<S, T> for Stack<S, T> {
+impl<S: State, T: DrawTarget<Color = Rgb888>> ElementTrait<S, T>
+    for Stack<S, T>
+{
     fn to_string(&self) -> String {
         let coll = self
             .items
@@ -85,7 +87,9 @@ impl<S, T> Box<S, T> {
     }
 }
 
-impl<S: State, T: Target888> ElementTrait<S, T> for Box<S, T> {
+impl<S: State, T: DrawTarget<Color = Rgb888>> ElementTrait<S, T>
+    for Box<S, T>
+{
     fn render(&self, _constraints: Constraints, state: &S) -> (Size, RenderNode<S, T>) {
         (
             self.size,
@@ -131,7 +135,9 @@ impl Text {
     }
 }
 
-impl<S: State, T: Target888> ElementTrait<S, T> for Text {
+impl<S: State, T: DrawTarget<Color = Rgb888>> ElementTrait<S, T>
+    for Text
+{
     fn to_string(&self) -> String {
         self.val.to_string()
     }
@@ -184,7 +190,9 @@ impl<S, T, V> ItemSelector<S, T, V> {
     }
 }
 
-impl<S: State, T: Target888, V> ElementTrait<S, T> for ItemSelector<S, T, V> {
+impl<S: State, T: DrawTarget<Color = Rgb888>, V>
+    ElementTrait<S, T> for ItemSelector<S, T, V>
+{
     fn render(&self, constraints: Constraints, state: &S) -> (Size, RenderNode<S, T>) {
         let mut size = Size::new(0, 0);
         let mut children = Vec::new();
@@ -241,7 +249,7 @@ impl<S: State, T: Target888, V> ElementTrait<S, T> for ItemSelector<S, T, V> {
     }
 }
 
-pub struct App<S: State, T: Target888> {
+pub struct App<S: State, T> {
     state: S,
     root: Element<S, T>,
     last_render_tree: RenderNode<S, T>,
@@ -249,7 +257,9 @@ pub struct App<S: State, T: Target888> {
     pub target: T,
 }
 
-impl<S: State, T: Target888> App<S, T> {
+impl<S: State, T: DrawTarget<Color = Rgb888> + 'static>
+    App<S, T>
+{
     pub fn new(root: ComponentGenerator<S, T>, inital_size: Size, target: T) -> Self {
         let state = S::default();
         let root = crate::elements::Component::new(root);
@@ -327,7 +337,9 @@ impl<S: State, T: Target888> App<S, T> {
     }
 }
 
-impl<S: State, T: Target888> Runner for App<S, T> {
+impl<S: State, T: DrawTarget<Color = Rgb888> + 'static> Runner
+    for App<S, T>
+{
     fn to_string(&mut self) -> String {
         self.root.to_string()
     }

@@ -1,16 +1,11 @@
-use core::convert::Infallible;
-
 use embedded_graphics_simulator::SimulatorDisplay;
 use crate::utils::*;
 
 pub trait State: Default + 'static {}
 
-pub trait Target888: DrawTarget<Color = Rgb888, Error = Infallible> + 'static{}
-
 pub type Draw565 = SimulatorDisplay<Rgb565>;
 
-impl Target888 for SimulatorDisplay<Rgb888> {}
-pub trait ElementTrait<S: State, T:Target888> {
+pub trait ElementTrait<S: State, T:DrawTarget<Color = Rgb888>>{
     fn to_string(&self) -> String {
         todo!()
     }
