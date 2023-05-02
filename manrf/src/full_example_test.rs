@@ -1,4 +1,4 @@
-use crate::defs::{ComponentGenerator, State};
+use crate::defs::{State};
 use crate::elements;
 use crate::elements::{BorderDefinition, StyleDefinition};
 use crate::palette::PALETTE_DREAM;
@@ -6,7 +6,6 @@ use crate::utils::*;
 
 use crate::{ItemSelector, ItemSelectorState};
 use embedded_graphics::prelude::Size;
-use embedded_graphics_simulator::SimulatorDisplay;
 
 const BORDERED_STYLE: StyleDefinition = StyleDefinition {
     background: Some(PALETTE_DREAM.darkest),
@@ -70,8 +69,11 @@ static GO_BACK: elements::EventHandler<AppState> = |state, event| {
     }
 };
 
-static ITEM_SELECTOR_VIEW: elements::Generator<AppState, SimulatorDisplay<Rgb888>> = |_| {
-    ItemSelector::<AppState, _, Key>::new(
+fn item_selector_view<T>(_: &AppState) -> Element<AppState, T>
+where
+    T: DrawTarget<Color = Rgb888> + 'static,
+{
+    ItemSelector::<AppState, T, Key>::new(
         |state| &state.keys,
         |state| state.keys_selected_state.clone(),
         |state, new_state| state.keys_selected_state = new_state,
@@ -89,9 +91,11 @@ static ITEM_SELECTOR_VIEW: elements::Generator<AppState, SimulatorDisplay<Rgb888
             )
         },
     )
-};
+}
 
-static SELECTED_VIEW: elements::Generator<AppState, SimulatorDisplay<Rgb888>> = |state| {
+fn selected_view<T: DrawTarget<Color = Rgb888> + 'static>(
+    state: &AppState,
+) -> Element<AppState, T> {
     let selected_key: Key = state
         .keys_selected_state
         .selected
@@ -111,14 +115,14 @@ static SELECTED_VIEW: elements::Generator<AppState, SimulatorDisplay<Rgb888>> = 
             )),
         ),
     )
-};
+}
 
-static MAIN_MENU: ComponentGenerator<AppState, SimulatorDisplay<Rgb888>> = |state| {
+fn main_menu<T: DrawTarget<Color = Rgb888> + 'static>(state: &AppState) -> Element<AppState, T> {
     let is_selected = state.keys_selected_state.selected.is_some();
 
     let actual_view = match is_selected {
-        true => SELECTED_VIEW,
-        false => ITEM_SELECTOR_VIEW,
+        true => selected_view,
+        false => item_selector_view,
     };
 
     elements::background(
@@ -134,14 +138,14 @@ static MAIN_MENU: ComponentGenerator<AppState, SimulatorDisplay<Rgb888>> = |stat
                 } else {
                     "Not selected".to_string()
                 }),
-            ) as Element<AppState, SimulatorDisplay<Rgb888>>,
-            elements::Component::new(actual_view) as Element<AppState, SimulatorDisplay<Rgb888>>,
+            ) as Element<AppState, T>,
+            elements::Component::new(actual_view) as Element<AppState, T>,
         ])),
     )
-};
+}
 
 #[ignore]
 #[test]
 fn create_keys_app() {
-    test_in_window::<AppState>(Size::new(128, 128), MAIN_MENU, |_, _| ());
+    test_in_window::<AppState>(Size::new(128, 128), main_menu, |_, _| ());
 }
