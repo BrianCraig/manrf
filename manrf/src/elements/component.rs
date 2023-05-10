@@ -1,21 +1,21 @@
 use crate::defs::*;
 use crate::utils::*;
 
-pub type Generator<S, T> = fn(&S) -> Element<S, T>;
+pub type Generator<S> = fn(&S) -> Element<S>;
 
-pub struct Component<S, T> {
-    generator: Generator<S, T>,
+pub struct Component<S> {
+    generator: Generator<S>,
 }
 
-impl<S: State, T> Component<S, T> {
-    pub fn new(generator: Generator<S, T>) -> Rc<Self> {
+impl<S: State> Component<S> {
+    pub fn new(generator: Generator<S>) -> Rc<Self> {
         Rc::new(Self { generator })
     }
 }
 
-impl<S: State, T:DrawTarget<Color = Rgb888>> ElementTrait<S, T> for Component<S, T> {
-    fn render(&self, constraints: Constraints, state: &S) -> (Size, RenderNode<S, T>) {
-        let child: Rc<dyn ElementTrait<S, T>> = (self.generator)(state);
+impl<S: State> ElementTrait<S> for Component<S> {
+    fn render(&self, constraints: Constraints, state: &S) -> (Size, RenderNode<S>) {
+        let child: Rc<dyn ElementTrait<S>> = (self.generator)(state);
         let (size, child_node) = child.render(constraints, state);
         (
             size,

@@ -69,11 +69,9 @@ static GO_BACK: elements::EventHandler<AppState> = |state, event| {
     }
 };
 
-fn item_selector_view<T>(_: &AppState) -> Element<AppState, T>
-where
-    T: DrawTarget<Color = Rgb888> + 'static,
+fn item_selector_view(_: &AppState) -> Element<AppState>
 {
-    ItemSelector::<AppState, T, Key>::new(
+    ItemSelector::<AppState, Key>::new(
         |state| &state.keys,
         |state| state.keys_selected_state.clone(),
         |state, new_state| state.keys_selected_state = new_state,
@@ -93,9 +91,9 @@ where
     )
 }
 
-fn selected_view<T: DrawTarget<Color = Rgb888> + 'static>(
+fn selected_view(
     state: &AppState,
-) -> Element<AppState, T> {
+) -> Element<AppState> {
     let selected_key: Key = state
         .keys_selected_state
         .selected
@@ -117,7 +115,7 @@ fn selected_view<T: DrawTarget<Color = Rgb888> + 'static>(
     )
 }
 
-fn main_menu<T: DrawTarget<Color = Rgb888> + 'static>(state: &AppState) -> Element<AppState, T> {
+fn main_menu(state: &AppState) -> Element<AppState> {
     let is_selected = state.keys_selected_state.selected.is_some();
 
     let actual_view = match is_selected {
@@ -138,8 +136,8 @@ fn main_menu<T: DrawTarget<Color = Rgb888> + 'static>(state: &AppState) -> Eleme
                 } else {
                     "Not selected".to_string()
                 }),
-            ) as Element<AppState, T>,
-            elements::Component::new(actual_view) as Element<AppState, T>,
+            ) as Element<AppState>,
+            elements::Component::new(actual_view) as Element<AppState>,
         ])),
     )
 }

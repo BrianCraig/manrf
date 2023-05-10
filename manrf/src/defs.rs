@@ -1,39 +1,36 @@
-use embedded_graphics_simulator::SimulatorDisplay;
 use crate::{utils::*, graphics::GraphicOperationQueue};
 
 pub trait State: Default + 'static {}
 
-pub type Draw565 = SimulatorDisplay<Rgb565>;
-
-pub trait ElementTrait<S: State, T:DrawTarget<Color = Rgb888>>{
+pub trait ElementTrait<S: State>{
     fn to_string(&self) -> String {
         todo!()
     }
-    fn render(&self, constraints: Constraints, state: &S) -> (Size, RenderNode<S, T>);
+    fn render(&self, constraints: Constraints, state: &S) -> (Size, RenderNode<S>);
     fn paint(&self, _size: Size, _pos: Point, _display: &mut GraphicOperationQueue) {}
     fn event_handler(&self, _state: &mut S, _event: Event) -> bool {
         false
     }
 }
 
-pub type Element<S, T> = Rc<dyn ElementTrait<S, T>>;
+pub type Element<S> = Rc<dyn ElementTrait<S>>;
 
-pub type EventFunction<T> = fn(&mut T, Event) -> bool;
+pub type EventFunction<S> = fn(&mut S, Event) -> bool;
 
-pub type ComponentGenerator<S, T> = fn(&S) -> Element<S, T>;
+pub type ComponentGenerator<S> = fn(&S) -> Element<S>;
 
 #[derive(Clone)]
-pub enum RenderNode<S, T> {
+pub enum RenderNode<S> {
     SingleChild {
         offset: Point,
         size: Size,
-        renderer: Element<S, T>,
-        child: Box<RenderNode<S, T>>,
+        renderer: Element<S>,
+        child: Box<RenderNode<S>>,
     },
     MultiChild {
         offset: Point,
         size: Size,
-        child: Vec<RenderNode<S, T>>,
+        child: Vec<RenderNode<S>>,
     },
     Leaf,
 }

@@ -3,19 +3,19 @@ use crate::utils::*;
 
 pub type EventHandler<S> = fn(&mut S, Event) -> bool;
 
-pub struct Handler<S, T> {
+pub struct Handler<S> {
     handler: EventHandler<S>,
-    child: Element<S, T>,
+    child: Element<S>,
 }
 
-impl<S: State, T> Handler<S, T> {
-    pub fn new(handler: EventHandler<S>, child: Element<S, T>) -> Rc<Self> {
+impl<S: State> Handler<S> {
+    pub fn new(handler: EventHandler<S>, child: Element<S>) -> Rc<Self> {
         Rc::new(Self { handler, child })
     }
 }
 
-impl<S: State, T:DrawTarget<Color = Rgb888>> ElementTrait<S, T> for Handler<S, T> {
-    fn render(&self, constraints: Constraints, state: &S) -> (Size, RenderNode<S, T>) {
+impl<S: State> ElementTrait<S> for Handler<S> {
+    fn render(&self, constraints: Constraints, state: &S) -> (Size, RenderNode<S>) {
         let (size, child_node) = self.child.render(constraints, state);
         (
             size,
