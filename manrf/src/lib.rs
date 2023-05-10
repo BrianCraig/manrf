@@ -1,15 +1,16 @@
 use defs::*;
 use embedded_graphics::mono_font::{ascii::FONT_6X10, MonoTextStyle};
+use graphics::{GraphicOperation, GraphicOperationQueue, GraphicsEndpoint};
 use utils::*;
 
 pub mod defs;
 pub mod elements;
 pub mod event;
 
+pub mod graphics;
 pub mod palette;
 mod testing_helpers;
 pub mod utils;
-
 pub struct Stack<S, T> {
     items: Vec<Element<S, T>>,
 }
@@ -20,9 +21,7 @@ impl<S: State, T> Stack<S, T> {
     }
 }
 
-impl<S: State, T: DrawTarget<Color = Rgb888>> ElementTrait<S, T>
-    for Stack<S, T>
-{
+impl<S: State, T: DrawTarget<Color = Rgb888>> ElementTrait<S, T> for Stack<S, T> {
     fn to_string(&self) -> String {
         let coll = self
             .items
@@ -77,19 +76,17 @@ impl<S: State, T: DrawTarget<Color = Rgb888>> ElementTrait<S, T>
 
 pub struct Box<S, T> {
     size: Size,
-    color: Rgb565,
+    color: Rgb888,
     child: Option<Element<S, T>>,
 }
 
 impl<S, T> Box<S, T> {
-    pub fn exactly(size: Size, color: Rgb565, child: Option<Element<S, T>>) -> Rc<Self> {
+    pub fn exactly(size: Size, color: Rgb888, child: Option<Element<S, T>>) -> Rc<Self> {
         Rc::new(Self { size, color, child })
     }
 }
 
-impl<S: State, T: DrawTarget<Color = Rgb888>> ElementTrait<S, T>
-    for Box<S, T>
-{
+impl<S: State, T: DrawTarget<Color = Rgb888>> ElementTrait<S, T> for Box<S, T> {
     fn render(&self, _constraints: Constraints, state: &S) -> (Size, RenderNode<S, T>) {
         (
             self.size,
@@ -114,14 +111,14 @@ impl<S: State, T: DrawTarget<Color = Rgb888>> ElementTrait<S, T>
         )
     }
 
-    fn paint(&self, _size: Size, pos: Point, display: &mut T) {
-        let _ = display.fill_solid(
-            &Rectangle {
+    fn paint(&self, _size: Size, pos: Point, queue: &mut GraphicOperationQueue) {
+        queue.push(GraphicOperation::DrawRectangle {
+            rect: Rectangle {
                 top_left: pos,
                 size: self.size,
             },
-            self.color.into(),
-        );
+            color: self.color,
+        });
     }
 }
 
@@ -135,9 +132,7 @@ impl Text {
     }
 }
 
-impl<S: State, T: DrawTarget<Color = Rgb888>> ElementTrait<S, T>
-    for Text
-{
+impl<S: State, T: DrawTarget<Color = Rgb888>> ElementTrait<S, T> for Text {
     fn to_string(&self) -> String {
         self.val.to_string()
     }
@@ -149,16 +144,12 @@ impl<S: State, T: DrawTarget<Color = Rgb888>> ElementTrait<S, T>
         )
     }
 
-    fn paint(&self, _size: Size, pos: Point, display: &mut T) {
-        let mut small_style = MonoTextStyle::new(&FONT_6X10, Rgb888::WHITE);
-        small_style.underline_color = embedded_graphics::text::DecorationColor::Custom(Rgb888::RED);
-        small_style.background_color = Some(Rgb888::GREEN);
-        let _ = embedded_graphics::text::Text::new(
-            self.val.as_str(),
-            pos + Point::new(0, small_style.font.baseline as i32),
-            small_style,
-        )
-        .draw(display);
+    fn paint(&self, _size: Size, pos: Point, queue: &mut GraphicOperationQueue) {
+        queue.push(GraphicOperation::DrawText {
+            position: pos,
+            text: self.val.clone(),
+            color: Rgb888::WHITE,
+        });
     }
 }
 
@@ -190,9 +181,7 @@ impl<S, T, V> ItemSelector<S, T, V> {
     }
 }
 
-impl<S: State, T: DrawTarget<Color = Rgb888>, V>
-    ElementTrait<S, T> for ItemSelector<S, T, V>
-{
+impl<S: State, T: DrawTarget<Color = Rgb888>, V> ElementTrait<S, T> for ItemSelector<S, T, V> {
     fn render(&self, constraints: Constraints, state: &S) -> (Size, RenderNode<S, T>) {
         let mut size = Size::new(0, 0);
         let mut children = Vec::new();
@@ -249,18 +238,17 @@ impl<S: State, T: DrawTarget<Color = Rgb888>, V>
     }
 }
 
-pub struct App<S: State, T> {
+pub struct App<S: State, T, U: GraphicsEndpoint> {
     state: S,
     root: Element<S, T>,
     last_render_tree: RenderNode<S, T>,
     inital_size: Size,
-    pub target: T,
+    // this is public because the simulator needs to access it, but it should not be public
+    pub endpoint: U
 }
 
-impl<S: State, T: DrawTarget<Color = Rgb888> + 'static>
-    App<S, T>
-{
-    pub fn new(root: ComponentGenerator<S, T>, inital_size: Size, target: T) -> Self {
+impl<S: State, T: DrawTarget<Color = Rgb888> + 'static, U: GraphicsEndpoint> App<S, T, U> {
+    pub fn new(root: ComponentGenerator<S, T>, inital_size: Size, endpoint: U) -> Self {
         let state = S::default();
         let root = crate::elements::Component::new(root);
         let last_render_tree = root
@@ -278,7 +266,7 @@ impl<S: State, T: DrawTarget<Color = Rgb888> + 'static>
             state,
             inital_size,
             last_render_tree,
-            target,
+            endpoint,
         }
     }
 
@@ -310,7 +298,7 @@ impl<S: State, T: DrawTarget<Color = Rgb888> + 'static>
         }
     }
 
-    fn paint(node: &RenderNode<S, T>, target: &mut T, origin_offset: Point) {
+    fn paint(node: &RenderNode<S, T>, target: &mut GraphicOperationQueue, origin_offset: Point) {
         match node {
             RenderNode::SingleChild {
                 offset,
@@ -337,9 +325,7 @@ impl<S: State, T: DrawTarget<Color = Rgb888> + 'static>
     }
 }
 
-impl<S: State, T: DrawTarget<Color = Rgb888> + 'static> Runner
-    for App<S, T>
-{
+impl<S: State, T: DrawTarget<Color = Rgb888> + 'static, U: GraphicsEndpoint> Runner for App<S, T, U> {
     fn to_string(&mut self) -> String {
         self.root.to_string()
     }
@@ -365,7 +351,9 @@ impl<S: State, T: DrawTarget<Color = Rgb888> + 'static> Runner
     }
 
     fn draw(&mut self) {
-        Self::paint(&self.last_render_tree, &mut self.target, Point::new(0, 0));
+        let mut queue = GraphicOperationQueue::new();
+        Self::paint(&self.last_render_tree, &mut queue, Point::new(0, 0));
+        self.endpoint.draw_queue(queue);
     }
 }
 

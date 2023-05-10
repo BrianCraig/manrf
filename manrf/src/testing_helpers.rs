@@ -1,6 +1,7 @@
 use std::time::SystemTime;
 
 use crate::defs::*;
+use crate::graphics::EmbeddedGraphicsEndpoint;
 use crate::utils::*;
 use embedded_graphics_simulator::{
     OutputSettingsBuilder, SimulatorDisplay, SimulatorEvent, Window,
@@ -14,7 +15,9 @@ type TINR = fn(Size, &mut dyn Runner);
 pub fn test_in_window<S: State>(size: Size, comp: ComponentGenerator<S, SimulatorDisplay<Rgb888>>, callback: TINR) {
     let display:SimulatorDisplay<Rgb888> = SimulatorDisplay::new(size);
 
-    let mut app = App::new(comp, size, display);
+    let endpoint = EmbeddedGraphicsEndpoint::new(display);
+
+    let mut app = App::new(comp, size, endpoint);
 
     let mut frames_counter = (SystemTime::now(), 0);
 
@@ -28,7 +31,7 @@ pub fn test_in_window<S: State>(size: Size, comp: ComponentGenerator<S, Simulato
 
     'running: loop {
         app.draw();
-        window.update(&app.target);
+        window.update(&app.endpoint.target);
 
         frames_counter.1 += 1;
         if frames_counter.0.elapsed().unwrap().as_secs() >= 1 {

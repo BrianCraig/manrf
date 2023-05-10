@@ -1,5 +1,5 @@
 use embedded_graphics_simulator::SimulatorDisplay;
-use crate::utils::*;
+use crate::{utils::*, graphics::GraphicOperationQueue};
 
 pub trait State: Default + 'static {}
 
@@ -10,7 +10,7 @@ pub trait ElementTrait<S: State, T:DrawTarget<Color = Rgb888>>{
         todo!()
     }
     fn render(&self, constraints: Constraints, state: &S) -> (Size, RenderNode<S, T>);
-    fn paint(&self, _size: Size, _pos: Point, _display: &mut T) {}
+    fn paint(&self, _size: Size, _pos: Point, _display: &mut GraphicOperationQueue) {}
     fn event_handler(&self, _state: &mut S, _event: Event) -> bool {
         false
     }

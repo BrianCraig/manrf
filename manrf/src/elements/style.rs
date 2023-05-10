@@ -1,4 +1,5 @@
 use crate::defs::*;
+use crate::graphics::{GraphicOperation, GraphicOperationQueue};
 use crate::utils::*;
 
 pub struct BorderDefinition {
@@ -93,7 +94,7 @@ impl<S, T> Style<S, T> {
     }
 }
 
-impl<S: State, T:DrawTarget<Color = Rgb888>> ElementTrait<S, T> for Style<S, T> {
+impl<S: State, T: DrawTarget<Color = Rgb888>> ElementTrait<S, T> for Style<S, T> {
     fn render(&self, _constraints: Constraints, state: &S) -> (Size, RenderNode<S, T>) {
         let added_size = self.added_size();
         let constraints = _constraints.shrink(&added_size);
@@ -111,25 +112,26 @@ impl<S: State, T:DrawTarget<Color = Rgb888>> ElementTrait<S, T> for Style<S, T> 
     }
 
     #[allow(unused_must_use)]
-    fn paint(&self, size: Size, pos: Point, display: &mut T) {
+    fn paint(&self, size: Size, pos: Point, queue: &mut GraphicOperationQueue) {
         if let Some(color) = self.style.background {
-            display.fill_solid(
-                &Rectangle::new(self.background_offset() + pos, self.background_size(size)),
-                color.into(),
-            );
+            queue.push(GraphicOperation::DrawRectangle {
+                rect: Rectangle::new(self.background_offset() + pos, self.background_size(size)),
+                color: color,
+            });
         }
         if !self.style.border.size.is_empty() {
             // paint left border
-            display.fill_solid(
-                &Rectangle::new(
+            queue.push(GraphicOperation::DrawRectangle {
+                rect: Rectangle::new(
                     self.border_offset() + pos,
                     Size::new(self.style.border.size.left, self.border_size(size).height),
                 ),
-                self.style.border.color.into(),
-            );
+                color: self.style.border.color,
+            });
+
             // paint right border
-            display.fill_solid(
-                &Rectangle::new(
+            queue.push(GraphicOperation::DrawRectangle {
+                rect: Rectangle::new(
                     self.border_offset()
                         + pos
                         + Point::new(
@@ -139,19 +141,21 @@ impl<S: State, T:DrawTarget<Color = Rgb888>> ElementTrait<S, T> for Style<S, T> 
                         ),
                     Size::new(self.style.border.size.right, self.border_size(size).height),
                 ),
-                self.style.border.color.into(),
-            );
+                color: self.style.border.color,
+            });
+
             // paint top border
-            display.fill_solid(
-                &Rectangle::new(
+            queue.push(GraphicOperation::DrawRectangle {
+                rect: Rectangle::new(
                     self.border_offset() + pos,
                     Size::new(self.border_size(size).width, self.style.border.size.top),
                 ),
-                self.style.border.color.into(),
-            );
+                color: self.style.border.color,
+            });
+
             // paint bottom border
-            display.fill_solid(
-                &Rectangle::new(
+            queue.push(GraphicOperation::DrawRectangle {
+                rect: Rectangle::new(
                     self.border_offset()
                         + pos
                         + Point::new(
@@ -161,8 +165,8 @@ impl<S: State, T:DrawTarget<Color = Rgb888>> ElementTrait<S, T> for Style<S, T> 
                         ),
                     Size::new(self.border_size(size).width, self.style.border.size.bottom),
                 ),
-                self.style.border.color.into(),
-            );
+                color: self.style.border.color,
+            });
         }
     }
 }
