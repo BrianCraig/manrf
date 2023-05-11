@@ -1,10 +1,4 @@
-use display_interface_spi::SPIInterfaceNoCS;
-use embedded_graphics::draw_target::ColorConverted;
-use embedded_graphics::pixelcolor::Rgb888;
-use embedded_graphics::prelude::DrawTarget;
-use esp_idf_hal::gpio::{PinDriver, Gpio16, Output, Gpio23};
-use esp_idf_hal::spi::{SpiDeviceDriver, SpiDriver};
-use manrf::defs::{ComponentGenerator, Element, State};
+use manrf::defs::{Element, State};
 use manrf::event::{Button, Event};
 use manrf::utils::EdgeInsets;
 use manrf::{elements::*, palette::PALETTE_DREAM};
@@ -16,7 +10,6 @@ const BORDERED_STYLE: StyleDefinition = StyleDefinition {
 };
 
 use manrf::{ItemSelector, ItemSelectorState, Stack, Text};
-
 
 #[derive(Clone)]
 struct Key {
@@ -47,7 +40,7 @@ pub struct AppState {
     keys_selected_state: ItemSelectorState,
 }
 
-impl State for AppState{}
+impl State for AppState {}
 
 impl Default for AppState {
     fn default() -> Self {
@@ -71,8 +64,8 @@ static GO_BACK: EventHandler<AppState> = |state, event| {
     }
 };
 
-fn ITEM_SELECTOR_VIEW<T:DrawTarget<Color = Rgb888> + 'static>( state:&AppState) -> Element<AppState, T> {
-    ItemSelector::<AppState,T,  Key>::new(
+fn item_selector_view(_state: &AppState) -> Element<AppState> {
+    ItemSelector::<AppState, Key>::new(
         |state| &state.keys,
         |state| state.keys_selected_state.clone(),
         |state, new_state| state.keys_selected_state = new_state,
@@ -92,7 +85,7 @@ fn ITEM_SELECTOR_VIEW<T:DrawTarget<Color = Rgb888> + 'static>( state:&AppState) 
     )
 }
 
-fn SELECTED_VIEW<T:DrawTarget<Color = Rgb888>+ 'static>( state:&AppState) -> Element<AppState, T>{
+fn selected_view(state: &AppState) -> Element<AppState> {
     let selected_key: Key = state
         .keys_selected_state
         .selected
@@ -114,12 +107,12 @@ fn SELECTED_VIEW<T:DrawTarget<Color = Rgb888>+ 'static>( state:&AppState) -> Ele
     )
 }
 
-pub fn main_menu<T:DrawTarget<Color = Rgb888>+ 'static>(state: &AppState) -> Element<AppState, T>{
+pub fn main_menu(state: &AppState) -> Element<AppState> {
     let is_selected = state.keys_selected_state.selected.is_some();
     let actual_view = if is_selected {
-        SELECTED_VIEW::<T>(state)
+        selected_view
     } else {
-        ITEM_SELECTOR_VIEW::<T>(state)
+        item_selector_view
     };
 
     background(
@@ -135,8 +128,8 @@ pub fn main_menu<T:DrawTarget<Color = Rgb888>+ 'static>(state: &AppState) -> Ele
                 } else {
                     "Not selected".to_string()
                 }),
-            ) as Element<AppState, T>,
-            //Component::new(actual_view) as Element<AppState, T>,
+            ) as Element<AppState>,
+            Component::new(actual_view) as Element<AppState>,
         ])),
     )
 }
