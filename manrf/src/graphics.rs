@@ -67,7 +67,7 @@ where
                     text,
                     color,
                 } => {
-                    let _ = Text::new(&text, position, MonoTextStyle::new(&FONT_6X10, color))
+                    let _ = Text::new(&text, position + Point::new(0, FONT_6X10.baseline as i32), MonoTextStyle::new(&FONT_6X10, color))
                         .draw(&mut self.target);
                 }
             }

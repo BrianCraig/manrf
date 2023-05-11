@@ -1,4 +1,4 @@
-use crate::defs::{State};
+use crate::defs::State;
 use crate::elements;
 use crate::elements::{BorderDefinition, StyleDefinition};
 use crate::palette::PALETTE_DREAM;
@@ -69,8 +69,7 @@ static GO_BACK: elements::EventHandler<AppState> = |state, event| {
     }
 };
 
-fn item_selector_view(_: &AppState) -> Element<AppState>
-{
+fn item_selector_view(_: &AppState) -> Element<AppState> {
     ItemSelector::<AppState, Key>::new(
         |state| &state.keys,
         |state| state.keys_selected_state.clone(),
@@ -91,9 +90,7 @@ fn item_selector_view(_: &AppState) -> Element<AppState>
     )
 }
 
-fn selected_view(
-    state: &AppState,
-) -> Element<AppState> {
+fn selected_view(state: &AppState) -> Element<AppState> {
     let selected_key: Key = state
         .keys_selected_state
         .selected
@@ -145,5 +142,5 @@ fn main_menu(state: &AppState) -> Element<AppState> {
 #[ignore]
 #[test]
 fn create_keys_app() {
-    test_in_window::<AppState>(Size::new(128, 128), main_menu, |_, _| ());
+    test_in_window(Size::new(135, 240), main_menu, |_, _| ());
 }

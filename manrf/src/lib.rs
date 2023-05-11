@@ -8,7 +8,7 @@ pub mod event;
 
 pub mod graphics;
 pub mod palette;
-mod testing_helpers;
+
 pub mod utils;
 pub struct Stack<S> {
     items: Vec<Element<S>>,
@@ -354,3 +354,6 @@ impl<S: State, U: GraphicsEndpoint> Runner for App<S, U> {
 
 #[cfg(test)]
 mod full_example_test;
+
+#[cfg(test)]
+mod testing_helpers;

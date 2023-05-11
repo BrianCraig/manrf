@@ -24,7 +24,7 @@ pub fn test_in_window<S: State>(size: Size, comp: ComponentGenerator<S>, callbac
     let output_settings = OutputSettingsBuilder::new()
         .max_fps(60)
         .pixel_spacing(0)
-        .scale(4)
+        .scale(3)
         .build();
 
     let mut window = Window::new("Hello World", &output_settings);

@@ -10,4 +10,6 @@ name = "manrf"
 
 [dependencies]
 embedded-graphics = "0.7.1"
+
+[dev-dependencies]
 embedded-graphics-simulator = "0.4.1"
